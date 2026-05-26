@@ -1,0 +1,64 @@
+version: "3.8"
+
+services:
+
+  # ─────────────────────────────────────────
+  # Servicio 1: Backend Spring WebFlux
+  # ─────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: upsglam-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SUPABASE_URL:         ${SUPABASE_URL}
+      SUPABASE_ANON_KEY:    ${SUPABASE_ANON_KEY}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      SUPABASE_JWT_SECRET:  ${SUPABASE_JWT_SECRET}
+      SUPABASE_DB_URL:      ${SUPABASE_DB_URL}
+      SUPABASE_DB_USER:     ${SUPABASE_DB_USER}
+      SUPABASE_DB_PASSWORD: ${SUPABASE_DB_PASSWORD}
+      CUDA_SERVICE_URL:     http://cuda-service:8001
+    networks:
+      - upsglam-net
+    depends_on:
+      cuda-service:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ─────────────────────────────────────────
+  # Servicio 2: FastAPI + PyCUDA
+  # ─────────────────────────────────────────
+  cuda-service:
+    build:
+      context: ./cuda-service
+      dockerfile: Dockerfile
+    container_name: upsglam-cuda
+    ports:
+      - "8001:8001"
+    networks:
+      - upsglam-net
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+# ─────────────────────────────────────────
+# Red interna compartida
+# ─────────────────────────────────────────
+networks:
+  upsglam-net:
+    driver: bridge

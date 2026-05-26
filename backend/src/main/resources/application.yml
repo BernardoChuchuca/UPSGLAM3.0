@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: upsglam-backend
+
+  # ── R2DBC — driver reactivo para Supabase PostgreSQL ──────────
+  r2dbc:
+    url:      r2dbc:postgresql://db.buwchoarzudhgecfyqah.supabase.co:5432/postgres
+    username: postgres
+    password: proyecto123
+    pool:
+      initial-size: 2
+      max-size:     10
+      max-idle-time: 30m
+
+# ── Supabase ────────────────────────────────────────────────────
+supabase:
+  url:         https://buwchoarzudhgecfyqah.supabase.co
+  anon-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1d2Nob2FyenVkaGdlY2Z5cWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NDAyNjUsImV4cCI6MjA5NTExNjI2NX0.VwXFaLMT59E9V59HxkfYt7fFWFtk9qFTkGQrOhkTI-c
+  service-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1d2Nob2FyenVkaGdlY2Z5cWFoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTU0MDI2NSwiZXhwIjoyMDk1MTE2MjY1fQ.YDz_sEEuUdZmcbsakmjSxXDgtwmoxQ_2LOaEMh1vy3A
+  jwt-secret:  vHAiTvBqbJn807RmkHfNsK1oswxUkMWQQT+1a2H933kSezFv7xfRbf9XpvvWtVatfAizE925mVzQ7OvnAOoAIQ==
+  storage:
+    bucket-originals:  originals
+    bucket-processed:  processed
+
+# ── Servicio CUDA (nombre del contenedor en Docker Compose) ─────
+cuda:
+  service-url: ${CUDA_SERVICE_URL:http://cuda-service:8001}
+
+# ── Logging ─────────────────────────────────────────────────────
+logging:
+  level:
+    com.upsglam: DEBUG
+    org.springframework.security: INFO
+
+server:
+  port: 8080
