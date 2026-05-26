@@ -1,5 +1,8 @@
 package com.upsglam.model;
+<<<<<<< HEAD
 
+=======
+>>>>>>> 661659fe00c77f5d8cfa7b89579d9480e250b2ad
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;

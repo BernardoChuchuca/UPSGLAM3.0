@@ -1,5 +1,8 @@
 package com.upsglam.controller;
+<<<<<<< HEAD
 
+=======
+>>>>>>> 661659fe00c77f5d8cfa7b89579d9480e250b2ad
 import com.upsglam.dto.request.CreatePostRequest;
 import com.upsglam.dto.response.PostResponse;
 import com.upsglam.service.PostService;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import java.util.UUID;
+<<<<<<< HEAD
 import java.util.Map;
 import java.util.HashMap;
 
@@ -51,6 +55,18 @@ public class PostController {
         return Flux.just(post1, post2);
     }
 
+=======
+@RestController
+@RequestMapping("/api/posts")
+@RequiredArgsConstructor
+public class PostController {
+    private final PostService postService;
+    @GetMapping("/feed")
+    public Flux<PostResponse> getFeed(Authentication auth) {
+        UUID userId = auth != null ? (UUID) auth.getPrincipal() : null;
+        return postService.getFeed(userId);
+    }
+>>>>>>> 661659fe00c77f5d8cfa7b89579d9480e250b2ad
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<ResponseEntity<PostResponse>> createPost(
             @RequestPart("data") @Valid CreatePostRequest req,
@@ -70,16 +86,26 @@ public class PostController {
                 image.headers().getContentType().toString()))
             .map(ResponseEntity::ok);
     }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 661659fe00c77f5d8cfa7b89579d9480e250b2ad
     @GetMapping("/user/{profileId}")
     public Flux<PostResponse> getUserPosts(@PathVariable UUID profileId, Authentication auth) {
         UUID userId = auth != null ? (UUID) auth.getPrincipal() : null;
         return postService.getUserPosts(profileId, userId);
     }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 661659fe00c77f5d8cfa7b89579d9480e250b2ad
     @DeleteMapping("/{postId}")
     public Mono<ResponseEntity<Void>> deletePost(@PathVariable UUID postId, Authentication auth) {
         return postService.deletePost((UUID) auth.getPrincipal(), postId)
             .thenReturn(ResponseEntity.<Void>noContent().build());
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 661659fe00c77f5d8cfa7b89579d9480e250b2ad
