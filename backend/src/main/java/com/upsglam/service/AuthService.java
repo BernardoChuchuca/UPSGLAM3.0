@@ -51,7 +51,8 @@ public class AuthService {
 
                     Map<String, Object> body = Map.of(
                             "email", req.getEmail(),
-                            "password", req.getPassword()
+                            "password", req.getPassword(),
+                            "options", Map.of("data", Map.of("username", req.getUsername()))
                     );
 
                     log.info("Iniciando registro para email: {} con username: {}", req.getEmail(), req.getUsername());
@@ -79,13 +80,8 @@ public class AuthService {
                                 }
                                 UUID authUserId = UUID.fromString(authUserIdStr);
 
-                                Profile profile = Profile.builder()
-                                        .authUserId(authUserId)
-                                        .username(req.getUsername())
-                                        .createdAt(OffsetDateTime.now())
-                                        .build();
-
-                                return profileRepo.save(profile);
+                                // Recuperar el perfil creado automáticamente por el trigger de Supabase
+                                return profileRepo.findByAuthUserId(authUserId);
                             })
                             .map(p -> ProfileResponse.builder()
                                     .id(p.getId())
