@@ -1,0 +1,76 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-title>Crear Cuenta</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding" color="dark">
+
+  <div class="logo-container">
+    <ion-icon name="person-add-outline" class="logo-icon"></ion-icon>
+    <h1>Únete a UPSGlam</h1>
+    <p>Crea tu cuenta y empieza a publicar</p>
+  </div>
+
+  <ion-item class="custom-item" lines="none">
+    <ion-label position="stacked" color="medium">Nombre de usuario</ion-label>
+    <ion-input
+      [(ngModel)]="username"
+      placeholder="mi_usuario"
+      style="--color: white;"
+    ></ion-input>
+  </ion-item>
+
+  <ion-item class="custom-item ion-margin-top" lines="none">
+    <ion-label position="stacked" color="medium">Correo electrónico</ion-label>
+    <ion-input
+      [(ngModel)]="email"
+      type="email"
+      placeholder="tu@correo.com"
+      style="--color: white;"
+    ></ion-input>
+  </ion-item>
+
+  <ion-item class="custom-item ion-margin-top" lines="none">
+    <ion-label position="stacked" color="medium">Contraseña</ion-label>
+    <ion-input
+      [(ngModel)]="password"
+      type="password"
+      placeholder="mínimo 6 caracteres"
+      style="--color: white;"
+    ></ion-input>
+  </ion-item>
+
+  <ion-button
+    expand="block"
+    color="primary"
+    class="action-btn ion-margin-top"
+    [disabled]="isLoading"
+    (click)="register()"
+  >
+    <ion-spinner *ngIf="isLoading" name="crescent" slot="start"></ion-spinner>
+    <ion-icon *ngIf="!isLoading" name="person-add-outline" slot="start"></ion-icon>
+    {{ isLoading ? 'Registrando...' : 'Crear Cuenta' }}
+  </ion-button>
+
+  <ion-button
+    expand="block"
+    fill="outline"
+    color="medium"
+    class="action-btn"
+    (click)="irALogin()"
+  >
+    <ion-icon name="arrow-back-outline" slot="start"></ion-icon>
+    Ya tengo cuenta
+  </ion-button>
+
+  <ion-toast
+    [isOpen]="toastOpen"
+    [message]="toastMessage"
+    [color]="toastColor"
+    duration="3000"
+    position="bottom"
+    (didDismiss)="toastOpen = false"
+  ></ion-toast>
+
+</ion-content>

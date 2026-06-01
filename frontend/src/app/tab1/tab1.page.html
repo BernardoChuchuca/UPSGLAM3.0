@@ -1,0 +1,50 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-title>UPSGlam 3.0</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content color="dark">
+
+  <!-- Feed de posts -->
+  <ion-list lines="none">
+    <ion-card *ngFor="let post of posts" class="post-card">
+      
+      <!-- Cabecera del post -->
+      <ion-card-header>
+        <ion-label>
+          <h2>{{ post.author?.username || 'Usuario' }}</h2>
+          <p>{{ post.filterName }} · {{ post.createdAt | date:'short' }}</p>
+        </ion-label>
+      </ion-card-header>
+
+      <!-- Imagen procesada -->
+      <img [src]="post.processedImageUrl" 
+           *ngIf="post.processedImageUrl"
+           style="width: 100%; object-fit: cover;" />
+      
+      <!-- Imagen original como fallback -->
+      <img [src]="post.originalImageUrl" 
+           *ngIf="!post.processedImageUrl && post.originalImageUrl"
+           style="width: 100%; object-fit: cover;" />
+
+      <!-- Descripción y likes -->
+      <ion-card-content>
+        <p>{{ post.caption }}</p>
+        <ion-chip color="success">
+          <ion-icon name="heart-outline"></ion-icon>
+          <ion-label>{{ post.likeCount || 0 }} likes</ion-label>
+        </ion-chip>
+      </ion-card-content>
+
+    </ion-card>
+
+    <!-- Sin posts -->
+    <div *ngIf="posts.length === 0" style="text-align:center; padding: 40px; color: #888;">
+      <ion-icon name="images-outline" style="font-size: 48px;"></ion-icon>
+      <p>No hay publicaciones aún</p>
+    </div>
+
+  </ion-list>
+
+</ion-content>
