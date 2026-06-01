@@ -30,6 +30,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource())) // ← CORS aquí
                 .authorizeExchange(ex -> ex
                         .pathMatchers("/actuator/health").permitAll()
+                        .pathMatchers("/api/auth/**").permitAll()
                         .pathMatchers("/api/filters").permitAll()
                         .pathMatchers("/api/posts/feed").permitAll()
                         .pathMatchers("/api/posts").permitAll()   // ← temporal para desarrollo
