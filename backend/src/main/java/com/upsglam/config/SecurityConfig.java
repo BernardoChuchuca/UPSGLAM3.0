@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .authorizeExchange(ex -> ex
                         // Rutas públicas
                         .pathMatchers("/actuator/health").permitAll()
+                        .pathMatchers("/api/auth/**").permitAll()
                         .pathMatchers("/api/filters").permitAll()
                         .pathMatchers("/api/posts/feed").permitAll()
                         // Todo lo demás requiere autenticación
