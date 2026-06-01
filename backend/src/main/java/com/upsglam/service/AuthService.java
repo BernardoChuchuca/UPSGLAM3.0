@@ -170,4 +170,32 @@ public class AuthService {
                             );
                 });
     }
+
+    /**
+     * Cierra la sesión del usuario en Supabase Auth invalidando su JWT.
+     */
+    public Mono<Void> logout(String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return Mono.error(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token de autorización inválido"));
+        }
+        String userToken = authHeader.substring(7);
+
+        log.info("Cerrando sesión en Supabase...");
+
+        return authWebClient.post()
+                .uri("/auth/v1/logout")
+                .header("Authorization", "Bearer " + userToken)
+                .retrieve()
+                .onStatus(status -> status.isError(), clientResponse ->
+                        clientResponse.bodyToMono(Map.class)
+                                .flatMap(errBody -> {
+                                    log.error("Error en logout Supabase: {}", errBody);
+                                    String msg = errBody.containsKey("msg") ? (String) errBody.get("msg")
+                                            : "Error al cerrar sesión en Supabase";
+                                    return Mono.error(new ResponseStatusException(clientResponse.statusCode(), msg));
+                                })
+                )
+                .toBodilessEntity()
+                .then();
+    }
 }
