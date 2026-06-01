@@ -1,0 +1,40 @@
+ion-content {
+  --background: #1a1a2e;
+}
+
+.logo-container {
+  text-align: center;
+  padding: 40px 0 30px;
+  color: white;
+
+  .logo-icon {
+    font-size: 64px;
+    color: var(--ion-color-primary);
+  }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 8px 0 4px;
+  }
+
+  p {
+    color: #888;
+    font-size: 0.9rem;
+  }
+}
+
+.custom-item {
+  --background: #16213e;
+  --border-radius: 12px;
+  border-radius: 12px;
+  margin-bottom: 4px;
+}
+
+.action-btn {
+  --border-radius: 14px;
+  height: 54px;
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 12px;
+}

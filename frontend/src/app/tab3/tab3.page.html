@@ -1,0 +1,68 @@
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-title>
+      <ion-icon name="sparkles-outline" style="margin-right: 8px"></ion-icon>
+      Nueva Publicación
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding" color="dark">
+  <!-- Zona de previsualización -->
+  <div class="preview-container" (click)="fileInput.click()">
+    <ng-container *ngIf="previewUrl; else placeholder">
+      <img [src]="previewUrl" class="preview-image" alt="Preview" />
+      <div class="overlay-change">
+        <ion-icon name="camera-outline"></ion-icon>
+        <span>Cambiar imagen</span>
+      </div>
+    </ng-container>
+    <ng-template #placeholder>
+      <div class="placeholder-content">
+        <ion-icon name="image-outline" class="placeholder-icon"></ion-icon>
+        <p>Toca para seleccionar una imagen</p>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- Input oculto -->
+  <input #fileInput type="file" accept="image/*" style="display: none" (change)="onFileSelected($event)" />
+
+  <!-- Descripción -->
+  <ion-item class="custom-item ion-margin-top" lines="none">
+    <ion-label position="stacked" color="medium">Descripción</ion-label>
+    <ion-textarea [(ngModel)]="caption" placeholder="Escribe algo sobre tu foto..." rows="3"
+      style="--color: white"></ion-textarea>
+  </ion-item>
+
+  <!-- Selector de filtro -->
+  <ion-item class="custom-item ion-margin-top" lines="none">
+    <ion-label color="medium">Filtro GPU (PyCUDA)</ion-label>
+    <ion-select [(ngModel)]="selectedFilter" interface="popover" placeholder="Seleccionar filtro">
+      <ion-select-option value="laplaciano">🔍 Laplaciano</ion-select-option>
+      <ion-select-option value="sobel">📐 Sobel</ion-select-option>
+      <ion-select-option value="promedio">🌫️ Promedio (Box Blur)</ion-select-option>
+      <ion-select-option value="nitidez">✨ Nitidez</ion-select-option>
+      <ion-select-option value="mediana">🔲 Mediana</ion-select-option>
+      <ion-select-option value="marca_agua">🎨 Marca de Agua UPS</ion-select-option>
+    </ion-select>
+  </ion-item>
+
+  <!-- Indicador GPU -->
+  <div class="status-badge ion-margin-top" *ngIf="selectedFilter && selectedFilter !== 'none'">
+    <ion-icon name="hardware-chip-outline" color="success"></ion-icon>
+    <span>Procesado en GPU · Docker PyCUDA activo</span>
+  </div>
+
+  <!-- Botón publicar -->
+  <ion-button expand="block" color="primary" class="publish-btn" [disabled]="!selectedFile || isLoading"
+    (click)="publicarPost()">
+    <ion-spinner *ngIf="isLoading" name="crescent" slot="start"></ion-spinner>
+    <ion-icon *ngIf="!isLoading" name="cloud-upload-outline" slot="start"></ion-icon>
+    {{ isLoading ? 'Publicando...' : 'Publicar' }}
+  </ion-button>
+
+  <!-- Toast feedback -->
+  <ion-toast [isOpen]="toastOpen" [message]="toastMessage" [color]="toastColor" duration="3000" position="bottom"
+    (didDismiss)="toastOpen = false"></ion-toast>
+</ion-content>

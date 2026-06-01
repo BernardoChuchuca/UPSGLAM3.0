@@ -1,12 +1,13 @@
-# ─────────────────────────────────────────────────────
-# CAMBIO CLAVE: Usamos 'devel' en lugar de 'runtime'.
-# Esto incluye nvcc, cudaProfiler.h y todo el toolkit 
-# necesario para instalar y ejecutar PyCUDA.
-# ─────────────────────────────────────────────────────
+# Base: NVIDIA CUDA 12.2 devel sobre Ubuntu 22.04
 FROM nvidia/cuda:12.2.0-devel-ubuntu22.04
 
+# Forzar a que APT y el instalador corran en modo silencioso (Sin preguntas de S/N)
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
+
+# Banderas de escape para que g++ ignore advertencias obsoletas dentro de Docker
+ENV CFLAGS="-Wno-deprecated-declarations -Wno-error"
+ENV CXXFLAGS="-Wno-deprecated-declarations -Wno-error"
 
 # Variables de entorno para que PyCUDA encuentre las librerías al compilar
 ENV PATH=/usr/local/cuda/bin:${PATH}
@@ -15,11 +16,8 @@ ENV CPATH=/usr/local/cuda/include:${CPATH}
 
 WORKDIR /app
 
-# ─────────────────────────────────────────────────────
 # Sistema: Python 3.10, pip, OpenCV headless y curl.
-# Ya no necesitamos instalar gcc, g++ ni nvcc manualmente
-# porque la imagen 'devel' ya los incluye.
-# ─────────────────────────────────────────────────────
+# Usamos -y obligatorio para aceptar todo automáticamente
 RUN apt-get update && apt-get install -y --no-install-recommends \
         python3.10 \
         python3.10-dev \
@@ -33,15 +31,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Alias python
 RUN ln -s /usr/bin/python3.10 /usr/bin/python
 
-# ─────────────────────────────────────────────────────
 # Dependencias Python
-# ─────────────────────────────────────────────────────
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# ─────────────────────────────────────────────────────
 # Código fuente del servicio
-# ─────────────────────────────────────────────────────
 COPY . .
 
 EXPOSE 8001
