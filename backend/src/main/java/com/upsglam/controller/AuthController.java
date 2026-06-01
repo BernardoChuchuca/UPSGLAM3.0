@@ -28,4 +28,10 @@ public class AuthController {
     public Mono<AuthResponse> login(@Valid @RequestBody LoginRequest req) {
         return authService.login(req);
     }
+
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public Mono<Void> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        return authService.logout(authHeader);
+    }
 }
