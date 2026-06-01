@@ -4,8 +4,8 @@ spring:
 
   # ── R2DBC — driver reactivo para Supabase PostgreSQL ──────────
   r2dbc:
-    url:      r2dbc:postgresql://db.buwchoarzudhgecfyqah.supabase.co:5432/postgres
-    username: postgres
+    url:      r2dbc:postgresql://aws-1-us-east-2.pooler.supabase.com:5432/postgres
+    username: postgres.buwchoarzudhgecfyqah
     password: proyecto123
     pool:
       initial-size: 2
