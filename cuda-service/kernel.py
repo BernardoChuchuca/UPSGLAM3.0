@@ -208,42 +208,35 @@ __global__ void kernel_sobel(
 }
 
 /* ============================================================
-   6. MARCA DE AGUA UPS — blending pixel a pixel con colores
-      institucionales: Azul UPS #003366, Amarillo UPS #FFD700.
-      Genera un degradado horizontal semitransparente sobre la
+   6. MARCA DE AGUA UPS — Superpone el logo institucional
+      de la universidad (RGBA) con transparencia alfa sobre la
       imagen original en la esquina inferior derecha.
-      alpha: intensidad del blending (0.0 – 1.0, típico 0.35)
+      alpha: opacidad global del logo (0.0 – 1.0, típico 0.85)
    ============================================================ */
-__global__ void kernel_marca_agua_ups(
+__global__ void kernel_marca_agua_logo(
     const uchar3* input,
     uchar3*       output,
+    const uchar4* logo,
     int width, int height,
-    float alpha,
-    int banda_h)          /* altura en píxeles de la banda UPS */
+    int logo_w, int logo_h,
+    int logo_x, int logo_y,
+    float alpha)
 {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
     if (x >= width || y >= height) return;
 
     uchar3 src = input[y * width + x];
-    uchar3 dst;
+    uchar3 dst = src;
 
-    /* Zona de la marca: franja inferior de altura banda_h */
-    if (y >= height - banda_h) {
-        /* Posición normalizada dentro de la banda */
-        float t = (float)(x) / (float)(width - 1);   /* 0=izq, 1=der */
-
-        /* Azul UPS: R=0, G=51, B=102  |  Amarillo UPS: R=255, G=215, B=0 */
-        float r_brand = (1.0f - t) *   0.0f + t * 255.0f;
-        float g_brand = (1.0f - t) *  51.0f + t * 215.0f;
-        float b_brand = (1.0f - t) * 102.0f + t *   0.0f;
-
-        /* Blending: output = alpha*brand + (1-alpha)*original */
-        dst.x = (unsigned char)fminf((alpha * r_brand + (1.0f - alpha) * src.x), 255.0f);
-        dst.y = (unsigned char)fminf((alpha * g_brand + (1.0f - alpha) * src.y), 255.0f);
-        dst.z = (unsigned char)fminf((alpha * b_brand + (1.0f - alpha) * src.z), 255.0f);
-    } else {
-        dst = src;
+    if (x >= logo_x && x < logo_x + logo_w && y >= logo_y && y < logo_y + logo_h) {
+        int lx = x - logo_x;
+        int ly = y - logo_y;
+        uchar4 logo_pixel = logo[ly * logo_w + lx];
+        float a = (float)logo_pixel.w / 255.0f * alpha;
+        dst.x = (unsigned char)fminf(a * logo_pixel.x + (1.0f - a) * src.x, 255.0f);
+        dst.y = (unsigned char)fminf(a * logo_pixel.y + (1.0f - a) * src.y, 255.0f);
+        dst.z = (unsigned char)fminf(a * logo_pixel.z + (1.0f - a) * src.z, 255.0f);
     }
 
     output[y * width + x] = dst;
@@ -258,7 +251,7 @@ _fn_nitidez     = _mod.get_function("kernel_nitidez")
 _fn_laplaciano  = _mod.get_function("kernel_laplaciano")
 _fn_mediana     = _mod.get_function("kernel_mediana")
 _fn_sobel       = _mod.get_function("kernel_sobel")
-_fn_marca_agua  = _mod.get_function("kernel_marca_agua_ups")
+_fn_marca_agua  = _mod.get_function("kernel_marca_agua_logo")
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -521,27 +514,51 @@ def aplicar_sobel(img_bgr: np.ndarray) -> tuple[np.ndarray, dict]:
 # FILTRO 6 — MARCA DE AGUA UPS
 # ──────────────────────────────────────────────────────────────────────────────
 def aplicar_marca_agua_ups(img_bgr: np.ndarray,
-                            alpha: float = 0.40,
-                            banda_pct: float = 0.12) -> tuple[np.ndarray, dict]:
+                            alpha: float = 0.85) -> tuple[np.ndarray, dict]:
     """
-    Superpone una franja con degradado de colores institucionales UPS
-    (Azul #003366 → Amarillo #FFD700) en la parte inferior de la imagen.
+    Superpone el logotipo de la UPS (logoupscolor.svg) como una marca de agua
+    con canal de transparencia (Alpha) en la esquina inferior derecha.
+    """
+    import cairosvg
+    import io
+    from PIL import Image
 
-    alpha      — opacidad del color de marca (0.0-1.0, recomendado 0.35-0.45)
-    banda_pct  — fracción de la altura de imagen que ocupa la banda (0.0-1.0)
-    """
     assert img_bgr.ndim == 3 and img_bgr.shape[2] == 3
     img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
     h, w    = img_rgb.shape[:2]
 
+    # 1. Renderizar y redimensionar el logotipo SVG
+    try:
+        png_data = cairosvg.svg2png(url="logoupscolor.svg")
+        logo_pil = Image.open(io.BytesIO(png_data)).convert("RGBA")
+    except Exception as e:
+        print(f"Error al cargar SVG: {e}, usando fallback")
+        # Fallback si no encuentra el archivo: logo en blanco transparente
+        logo_pil = Image.new("RGBA", (100, 100), (255, 255, 255, 128))
+
+    # Redimensionar el logo al 25% del ancho de la imagen destino
+    logo_w = max(10, int(w * 0.25))
+    logo_h = max(10, int(logo_w * logo_pil.height / logo_pil.width))
+    logo_pil = logo_pil.resize((logo_w, logo_h), Image.Resampling.LANCZOS)
+    
+    # Convertir logo a numpy array de tipo uint8 (RGBA)
+    h_logo = np.ascontiguousarray(logo_pil, dtype=np.uint8)
+
+    # 2. Definir coordenadas de la esquina inferior derecha con un pequeño margen
+    margin = 16
+    logo_x = max(0, w - logo_w - margin)
+    logo_y = max(0, h - logo_h - margin)
+
+    # 3. Preparar memoria CUDA
     h_in  = np.ascontiguousarray(img_rgb, dtype=np.uint8)
     h_out = np.empty_like(h_in)
 
-    d_in  = cuda.mem_alloc(h_in.nbytes)
-    d_out = cuda.mem_alloc(h_out.nbytes)
-    cuda.memcpy_htod(d_in, h_in)
+    d_in   = cuda.mem_alloc(h_in.nbytes)
+    d_out  = cuda.mem_alloc(h_out.nbytes)
+    d_logo = cuda.mem_alloc(h_logo.nbytes)
 
-    banda_h = max(1, int(h * banda_pct))
+    cuda.memcpy_htod(d_in, h_in)
+    cuda.memcpy_htod(d_logo, h_logo)
 
     BLOCK = (16, 16, 1)
     GRID  = (math.ceil(w / 16), math.ceil(h / 16), 1)
@@ -550,10 +567,13 @@ def aplicar_marca_agua_ups(img_bgr: np.ndarray,
     cuda.Context.synchronize()
     ev0.record()
 
+    # Llamar al nuevo kernel
     _fn_marca_agua(
-        d_in, d_out,
+        d_in, d_out, d_logo,
         np.int32(w), np.int32(h),
-        np.float32(alpha), np.int32(banda_h),
+        np.int32(logo_w), np.int32(logo_h),
+        np.int32(logo_x), np.int32(logo_y),
+        np.float32(alpha),
         block=BLOCK, grid=GRID
     )
 
@@ -561,7 +581,7 @@ def aplicar_marca_agua_ups(img_bgr: np.ndarray,
     ms = _gpu_time(ev0, ev1)
 
     cuda.memcpy_dtoh(h_out, d_out)
-    d_in.free(); d_out.free()
+    d_in.free(); d_out.free(); d_logo.free()
 
     resultado_rgb = h_out.reshape(h, w, 3)
     resultado_bgr = cv2.cvtColor(resultado_rgb, cv2.COLOR_RGB2BGR)
@@ -577,7 +597,7 @@ FILTROS = {
     "laplaciano":  lambda img: aplicar_laplaciano(img, ms=5),
     "mediana":     lambda img: aplicar_mediana(img, radio=2),
     "sobel":       lambda img: aplicar_sobel(img),
-    "marca_agua":  lambda img: aplicar_marca_agua_ups(img, alpha=0.40, banda_pct=0.12),
+    "marca_agua":  lambda img: aplicar_marca_agua_ups(img, alpha=0.85),
 }
 
 if __name__ == "__main__":

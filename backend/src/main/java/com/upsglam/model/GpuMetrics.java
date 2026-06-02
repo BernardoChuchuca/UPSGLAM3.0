@@ -15,21 +15,9 @@ import java.util.UUID;
 public class GpuMetrics {
     @Id
     private UUID id;
-    
-    @Column("history_id")
-    private UUID historyId;
 
     @Column("processing_id")
     private UUID processingId;
-    
-    @Column("execution_time_cpu")
-    private BigDecimal executionTimeCpu;
-    
-    @Column("execution_time_gpu")
-    private BigDecimal executionTimeGpu;
-    
-    @Column("speedup")
-    private BigDecimal speedup;
 
     @Column("block_dim")
     private String blockDim;

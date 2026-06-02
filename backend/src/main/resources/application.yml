@@ -1,12 +1,14 @@
 spring:
   application:
     name: upsglam-backend
+  codec:
+    max-in-memory-size: 100MB
 
   # ── R2DBC — driver reactivo para Supabase PostgreSQL ──────────
   r2dbc:
-    url:      r2dbc:postgresql://aws-1-us-east-2.pooler.supabase.com:5432/postgres
-    username: postgres.buwchoarzudhgecfyqah
-    password: proyecto123
+    url:      ${SUPABASE_DB_URL:r2dbc:postgresql://aws-1-us-east-2.pooler.supabase.com:5432/postgres}
+    username: ${SUPABASE_DB_USER:postgres.buwchoarzudhgecfyqah}
+    password: ${SUPABASE_DB_PASSWORD:proyecto123}
     pool:
       initial-size: 2
       max-size:     10
@@ -14,10 +16,10 @@ spring:
 
 # ── Supabase ────────────────────────────────────────────────────
 supabase:
-  url:         https://buwchoarzudhgecfyqah.supabase.co
-  anon-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1d2Nob2FyenVkaGdlY2Z5cWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NDAyNjUsImV4cCI6MjA5NTExNjI2NX0.VwXFaLMT59E9V59HxkfYt7fFWFtk9qFTkGQrOhkTI-c
-  service-key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1d2Nob2FyenVkaGdlY2Z5cWFoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTU0MDI2NSwiZXhwIjoyMDk1MTE2MjY1fQ.YDz_sEEuUdZmcbsakmjSxXDgtwmoxQ_2LOaEMh1vy3A
-  jwt-secret:  vHAiTvBqbJn807RmkHfNsK1oswxUkMWQQT+1a2H933kSezFv7xfRbf9XpvvWtVatfAizE925mVzQ7OvnAOoAIQ==
+  url:         ${SUPABASE_URL:https://buwchoarzudhgecfyqah.supabase.co}
+  anon-key:    ${SUPABASE_ANON_KEY:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1d2Nob2FyenVkaGdlY2Z5cWFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NDAyNjUsImV4cCI6MjA5NTExNjI2NX0.VwXFaLMT59E9V59HxkfYt7fFWFtk9qFTkGQrOhkTI-c}
+  service-key: ${SUPABASE_SERVICE_KEY:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ1d2Nob2FyenVkaGdlY2Z5cWFoIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTU0MDI2NSwiZXhwIjoyMDk1MTE2MjY1fQ.YDz_sEEuUdZmcbsakmjSxXDgtwmoxQ_2LOaEMh1vy3A}
+  jwt-secret:  ${SUPABASE_JWT_SECRET:vHAiTvBqbJn807RmkHfNsK1oswxUkMWQQT+1a2H933kSezFv7xfRbf9XpvvWtVatfAizE925mVzQ7OvnAOoAIQ==}
   storage:
     bucket-originals:  originals
     bucket-processed:  processed

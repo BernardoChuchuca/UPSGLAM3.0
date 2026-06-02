@@ -30,11 +30,28 @@
 
       <!-- Descripción y likes -->
       <ion-card-content>
-        <p>{{ post.caption }}</p>
-        <ion-chip color="success">
-          <ion-icon name="heart-outline"></ion-icon>
-          <ion-label>{{ post.likeCount || 0 }} likes</ion-label>
-        </ion-chip>
+        <p style="font-size: 15px; color: #e0e0e0; margin-bottom: 12px;">{{ post.caption }}</p>
+        
+        <div style="display: flex; align-items: center; gap: 16px; margin-top: 8px;">
+          <ion-button fill="clear" (click)="toggleLike(post)" style="--padding-start: 0; --padding-end: 0; margin: 0; height: 32px;">
+            <ion-icon slot="icon-only" 
+                      [name]="post.likedByMe ? 'heart' : 'heart-outline'"
+                      [style.color]="post.likedByMe ? '#ff4961' : '#ffffff'" 
+                      style="font-size: 26px;">
+            </ion-icon>
+          </ion-button>
+          
+          <ion-button fill="clear" (click)="abrirComentarios(post)" style="--padding-start: 0; --padding-end: 0; margin: 0; height: 32px;">
+            <ion-icon slot="icon-only" 
+                      name="chatbubble-outline" 
+                      style="color: #ffffff; font-size: 24px;">
+            </ion-icon>
+          </ion-button>
+          
+          <span style="font-weight: 600; color: #ffffff; font-size: 14px; margin-left: 4px;">
+            {{ post.likeCount || 0 }} likes
+          </span>
+        </div>
       </ion-card-content>
 
     </ion-card>
@@ -46,5 +63,64 @@
     </div>
 
   </ion-list>
+
+  <!-- Modal de comentarios estilo Bottom Sheet -->
+  <ion-modal [isOpen]="isCommentsModalOpen" (didDismiss)="isCommentsModalOpen = false" [initialBreakpoint]="0.75" [breakpoints]="[0, 0.5, 0.75, 0.95]">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar color="dark">
+          <ion-title>Comentarios</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="isCommentsModalOpen = false" color="light">Cerrar</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      
+      <ion-content color="dark">
+        <!-- Lista de comentarios -->
+        <ion-list lines="none" style="background: transparent; padding: 16px;">
+          <ion-item *ngFor="let comment of comments" style="--background: transparent; margin-bottom: 12px; --padding-start: 0;">
+            <ion-label class="ion-text-wrap">
+              <h3 style="color: #fff; font-weight: bold; margin-bottom: 4px;">
+                @{{ comment.author?.username || 'Usuario' }}
+                <span style="font-weight: normal; font-size: 11px; color: #888; margin-left: 8px;">
+                  {{ comment.createdAt | date:'short' }}
+                </span>
+              </h3>
+              <p style="color: #ccc; margin: 0; font-size: 14px;">{{ comment.content }}</p>
+            </ion-label>
+            
+            <!-- Botón para eliminar comentario propio -->
+            <ion-button slot="end" fill="clear" color="danger" 
+                        *ngIf="currentUserProfile && comment.author?.id === currentUserProfile.id"
+                        (click)="borrarComentario(comment.id)">
+              <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+            </ion-button>
+          </ion-item>
+          
+          <div *ngIf="comments.length === 0" style="text-align: center; padding: 40px 20px; color: #666;">
+            <ion-icon name="chatbubble-outline" style="font-size: 32px; margin-bottom: 8px;"></ion-icon>
+            <p style="margin: 0;">No hay comentarios aún. ¡Sé el primero en comentar!</p>
+          </div>
+        </ion-list>
+      </ion-content>
+      
+      <!-- Footer para escribir nuevo comentario -->
+      <ion-footer style="background: #1e1e1e;">
+        <ion-toolbar color="dark">
+          <ion-item lines="none" style="--background: transparent; width: 100%;">
+            <ion-input placeholder="Escribe un comentario..." 
+                       [(ngModel)]="newCommentText" 
+                       (keyup.enter)="agregarComentario()" 
+                       style="--color: #fff; margin-right: 8px;">
+            </ion-input>
+            <ion-button slot="end" fill="clear" color="primary" [disabled]="!newCommentText.trim()" (click)="agregarComentario()">
+              <ion-icon slot="icon-only" name="send-outline"></ion-icon>
+            </ion-button>
+          </ion-item>
+        </ion-toolbar>
+      </ion-footer>
+    </ng-template>
+  </ion-modal>
 
 </ion-content>

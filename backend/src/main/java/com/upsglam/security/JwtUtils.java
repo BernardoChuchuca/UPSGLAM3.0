@@ -4,24 +4,35 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.UUID;
 
 /**
  * Utilidades para validar y leer el JWT emitido por Supabase Auth.
  * Supabase firma con HS256 usando el JWT_SECRET del proyecto.
  */
+@Slf4j
 @Component
 public class JwtUtils {
 
     private final SecretKey secretKey;
 
     public JwtUtils(@Value("${supabase.jwt-secret}") String jwtSecret) {
-        this.secretKey = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+        byte[] keyBytes;
+        try {
+            keyBytes = Base64.getDecoder().decode(jwtSecret.trim());
+            log.info("JWT Secret successfully decoded from Base64");
+        } catch (IllegalArgumentException e) {
+            keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+            log.warn("JWT Secret could not be decoded as Base64, using raw bytes");
+        }
+        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
     /**
@@ -46,6 +57,7 @@ public class JwtUtils {
             extractUserId(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
+            log.error("JWT Validation failed: {}", e.getMessage());
             return false;
         }
     }

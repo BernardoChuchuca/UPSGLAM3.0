@@ -17,7 +17,7 @@ public class WebClientConfig {
             @Value("${cuda.service-url}") String cudaServiceUrl) {
         return WebClient.builder()
                 .baseUrl(cudaServiceUrl)
-                .codecs(c -> c.defaultCodecs().maxInMemorySize(20 * 1024 * 1024)) // 20 MB
+                .codecs(c -> c.defaultCodecs().maxInMemorySize(100 * 1024 * 1024)) // 100 MB
                 .build();
     }
 
@@ -33,7 +33,7 @@ public class WebClientConfig {
                 .baseUrl(supabaseUrl)
                 .defaultHeader("apikey", serviceKey)
                 .defaultHeader("Authorization", "Bearer " + serviceKey)
-                .codecs(c -> c.defaultCodecs().maxInMemorySize(20 * 1024 * 1024))
+                .codecs(c -> c.defaultCodecs().maxInMemorySize(100 * 1024 * 1024)) // 100 MB
                 .build();
     }
 }

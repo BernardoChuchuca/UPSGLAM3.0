@@ -52,7 +52,7 @@ public class AuthService {
                     Map<String, Object> body = Map.of(
                             "email", req.getEmail(),
                             "password", req.getPassword(),
-                            "options", Map.of("data", Map.of("username", req.getUsername()))
+                            "data", Map.of("username", req.getUsername())
                     );
 
                     log.info("Iniciando registro para email: {} con username: {}", req.getEmail(), req.getUsername());
@@ -73,10 +73,16 @@ public class AuthService {
                             )
                             .bodyToMono(Map.class)
                             .flatMap(res -> {
-                                String authUserIdStr = (String) res.get("id");
+                                @SuppressWarnings("unchecked")
+                                Map<String, Object> userMap = (Map<String, Object>) res.get("user");
+                                if (userMap == null) {
+                                    return Mono.error(new ResponseStatusException(
+                                            HttpStatus.INTERNAL_SERVER_ERROR, "Respuesta de registro inválida de Supabase Auth (falta objeto user)"));
+                                }
+                                String authUserIdStr = (String) userMap.get("id");
                                 if (authUserIdStr == null) {
                                     return Mono.error(new ResponseStatusException(
-                                            HttpStatus.INTERNAL_SERVER_ERROR, "Respuesta inválida de Supabase Auth"));
+                                            HttpStatus.INTERNAL_SERVER_ERROR, "Respuesta de registro inválida de Supabase Auth (falta id de usuario)"));
                                 }
                                 UUID authUserId = UUID.fromString(authUserIdStr);
 

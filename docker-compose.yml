@@ -56,6 +56,22 @@ services:
       start_period: 20s
     restart: unless-stopped
 
+  # ─────────────────────────────────────────
+  # Servicio 3: Frontend Ionic Angular
+  # ─────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: upsglam-frontend
+    ports:
+      - "8100:8100"
+    networks:
+      - upsglam-net
+    depends_on:
+      - backend
+    restart: unless-stopped
+
 # ─────────────────────────────────────────
 # Red interna compartida
 # ─────────────────────────────────────────

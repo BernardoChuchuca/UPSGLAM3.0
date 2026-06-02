@@ -1,17 +1,184 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Tab 2
-    </ion-title>
+<ion-header>
+  <ion-toolbar color="dark">
+    <ion-title>Perfil</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="logout()" color="danger">
+        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Tab 2</ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content color="dark">
+  <div class="profile-container" *ngIf="profile">
+    
+    <!-- Header de Perfil -->
+    <div class="profile-header">
+      <div class="avatar-container">
+        <div class="avatar-fallback">
+          <ion-icon name="person-outline"></ion-icon>
+        </div>
+      </div>
+      
+      <div class="profile-stats">
+        <div class="stat-item">
+          <span class="stat-value">{{ posts.length }}</span>
+          <span class="stat-label">Publicaciones</span>
+        </div>
+      </div>
+    </div>
 
-  <app-explore-container name="Tab 2 page"></app-explore-container>
+    <!-- Detalles del Perfil -->
+    <div class="profile-details">
+      <h2 class="username">@{{ profile.username }}</h2>
+      <p class="bio" *ngIf="profile.bio">{{ profile.bio }}</p>
+      <p class="bio placeholder-bio" *ngIf="!profile.bio">¡Bienvenido a tu perfil de UPSGlam! Edita tu bio para presentarte.</p>
+    </div>
+
+    <div class="profile-divider"></div>
+
+    <!-- Segment Control estilo Instagram -->
+    <ion-segment [(ngModel)]="activeTab" color="primary" class="profile-segment" style="margin-bottom: 20px;">
+      <ion-segment-button value="posts">
+        <ion-icon name="images-outline"></ion-icon>
+        <ion-label>Publicaciones</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="history">
+        <ion-icon name="hardware-chip-outline"></ion-icon>
+        <ion-label>Historial GPU</ion-label>
+      </ion-segment-button>
+    </ion-segment>
+
+    <!-- Pestaña de Publicaciones -->
+    <div *ngIf="activeTab === 'posts'">
+      <div class="posts-grid" *ngIf="posts.length > 0">
+        <div class="grid-item" *ngFor="let post of posts" (click)="selectedPost = post">
+          <img [src]="post.processedImageUrl || post.originalImageUrl" />
+          <div class="delete-overlay">
+            <ion-icon name="images-outline"></ion-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="no-posts" *ngIf="posts.length === 0">
+        <ion-icon name="images-outline"></ion-icon>
+        <p>No tienes publicaciones aún</p>
+      </div>
+    </div>
+
+    <!-- Pestaña de Historial GPU -->
+    <div *ngIf="activeTab === 'history'">
+      <div *ngIf="history.length > 0">
+        <ion-card *ngFor="let metric of history" class="metric-card" style="background: #1e1e1e; margin: 0 0 16px 0; border-radius: 12px; border: 1px solid #2a2a2a; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+          
+          <!-- Cabecera de la métrica -->
+          <ion-card-header style="padding: 12px 16px 8px 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 16px; font-weight: bold; color: #fff;">{{ metric.filterName }}</span>
+              <ion-chip [color]="metric.status === 'SUCCESS' ? 'success' : 'danger'" style="margin: 0; font-size: 11px; font-weight: bold; text-transform: uppercase;">
+                <ion-icon [name]="metric.status === 'SUCCESS' ? 'checkmark-circle-outline' : 'alert-circle-outline'"></ion-icon>
+                <ion-label>{{ metric.status }}</ion-label>
+              </ion-chip>
+            </div>
+            <span style="font-size: 12px; color: #888;">{{ metric.createdAt | date:'medium' }}</span>
+          </ion-card-header>
+
+          <ion-card-content style="padding: 0 16px 16px 16px;">
+            <!-- Contenido principal: Thumbnail e información técnica -->
+            <div style="display: flex; gap: 16px; align-items: flex-start;">
+              <!-- Miniatura -->
+              <div style="width: 80px; height: 80px; border-radius: 8px; overflow: hidden; background: #333; flex-shrink: 0;">
+                <img [src]="metric.processedImageUrl || metric.originalImageUrl" style="width: 100%; height: 100%; object-fit: cover;" />
+              </div>
+
+              <!-- Tabla de datos técnicos -->
+              <div style="flex-grow: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px;">
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Dimensión Bloque</span>
+                  <span style="font-size: 13px; color: #fff; font-weight: 500;">
+                    <ion-icon name="cube-outline" style="vertical-align: middle; margin-right: 4px; font-size: 14px; color: #5260ff;"></ion-icon>
+                    {{ metric.blockDim || 'N/A' }}
+                  </span>
+                </div>
+                
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Dimensión Grid</span>
+                  <span style="font-size: 13px; color: #fff; font-weight: 500;">
+                    <ion-icon name="grid-outline" style="vertical-align: middle; margin-right: 4px; font-size: 14px; color: #5260ff;"></ion-icon>
+                    {{ metric.gridDim || 'N/A' }}
+                  </span>
+                </div>
+
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Hilos Lanzados</span>
+                  <span style="font-size: 13px; color: #fff; font-weight: 500;">
+                    {{ metric.totalThreads ? (metric.totalThreads | number) : 'N/A' }}
+                  </span>
+                </div>
+
+                <div style="display: flex; flex-direction: column;">
+                  <span style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Tiempo Kernel</span>
+                  <span style="font-size: 13px; color: #2dd36f; font-weight: bold;">
+                    <ion-icon name="time-outline" style="vertical-align: middle; margin-right: 4px; font-size: 14px; color: #2dd36f;"></ion-icon>
+                    {{ metric.kernelTimeMs ? (metric.kernelTimeMs | number:'1.2-2') + ' ms' : 'N/A' }}
+                  </span>
+                </div>
+
+                <div style="display: flex; flex-direction: column; grid-column: span 2;">
+                  <span style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Tamaño de Imagen</span>
+                  <span style="font-size: 13px; color: #fff;">
+                    {{ metric.imageWidth && metric.imageHeight ? metric.imageWidth + ' x ' + metric.imageHeight + ' px' : 'N/A' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <div class="no-posts" *ngIf="history.length === 0">
+        <ion-icon name="hardware-chip-outline"></ion-icon>
+        <p>No hay registros de procesamiento aún</p>
+      </div>
+    </div>
+
+    <!-- Modal para ver la imagen en grande y eliminar -->
+    <ion-modal [isOpen]="selectedPost !== null" (didDismiss)="selectedPost = null">
+      <ng-template>
+        <ion-header>
+          <ion-toolbar color="dark">
+            <ion-title>Publicación</ion-title>
+            <ion-buttons slot="end">
+              <ion-button (click)="selectedPost = null" color="light">Cerrar</ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        
+        <ion-content color="dark" style="--background: #121212;">
+          <div *ngIf="selectedPost" style="display: flex; flex-direction: column; height: 100%; padding: 16px; justify-content: space-between; gap: 16px;">
+            <div style="flex-grow: 1; display: flex; align-items: center; justify-content: center; background: #000; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.5); max-height: 60vh;">
+              <img [src]="selectedPost.processedImageUrl || selectedPost.originalImageUrl" style="max-width: 100%; max-height: 100%; object-fit: contain;" />
+            </div>
+            
+            <div style="padding: 12px 0;">
+              <p style="font-size: 16px; color: #fff; margin: 0 0 8px 0; font-weight: 500;">
+                {{ selectedPost.caption || 'Sin descripción' }}
+              </p>
+              <p style="font-size: 13px; color: #888; margin: 0;">
+                Filtro GPU aplicado: <span style="color: #5260ff; font-weight: bold;">{{ selectedPost.filterName || 'Desconocido' }}</span>
+              </p>
+            </div>
+            
+            <div style="padding-bottom: 8px;">
+              <ion-button expand="block" color="danger" (click)="confirmarBorrarPost(selectedPost.id)" style="font-weight: 600;">
+                <ion-icon name="trash-outline" slot="start"></ion-icon>
+                Eliminar publicación
+              </ion-button>
+            </div>
+          </div>
+        </ion-content>
+      </ng-template>
+    </ion-modal>
+
+  </div>
 </ion-content>
