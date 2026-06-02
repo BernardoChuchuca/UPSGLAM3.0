@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import {
   IonHeader, IonToolbar, IonTitle, IonContent,
   IonItem, IonLabel, IonTextarea, IonSelect,
-  IonSelectOption, IonButton, IonIcon, IonSpinner, IonToast
+  IonSelectOption, IonButton, IonIcon, IonSpinner, IonToast,
+  IonSegment, IonSegmentButton
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -24,15 +25,19 @@ import { PostService, CreatePostRequest } from '../services/post';
     FormsModule,
     IonHeader, IonToolbar, IonTitle, IonContent,
     IonItem, IonLabel, IonTextarea, IonSelect,
-    IonSelectOption, IonButton, IonIcon, IonSpinner, IonToast
+    IonSelectOption, IonButton, IonIcon, IonSpinner, IonToast,
+    IonSegment, IonSegmentButton
   ],
 })
 export class Tab3Page {
 
   selectedFile: File | null = null;
   previewUrl: string | null = null;
+  filteredPreviewUrl: string | null = null;
+  previewMode: 'original' | 'preview' = 'original';
   caption: string = '';
   selectedFilter: string = 'laplaciano';
+  isPreviewLoading: boolean = false;
 
   isLoading: boolean = false;
   toastOpen: boolean = false;
@@ -56,8 +61,35 @@ export class Tab3Page {
     const reader = new FileReader();
     reader.onload = () => {
       this.previewUrl = reader.result as string;
+      this.filteredPreviewUrl = null;
+      this.previewMode = 'original';
+      this.cargarPrevisualizacion();
     };
     reader.readAsDataURL(file);
+  }
+
+  onFilterChanged(): void {
+    if (this.selectedFile) {
+      this.cargarPrevisualizacion();
+    }
+  }
+
+  cargarPrevisualizacion(): void {
+    if (!this.selectedFile || !this.selectedFilter) return;
+
+    this.isPreviewLoading = true;
+    this.postService.obtenerPrevisualizacion(this.selectedFile, this.selectedFilter).subscribe({
+      next: (res) => {
+        this.filteredPreviewUrl = 'data:image/jpeg;base64,' + res.image_base64;
+        this.previewMode = 'preview';
+        this.isPreviewLoading = false;
+      },
+      error: (err) => {
+        console.error('❌ Error al obtener previsualización:', err);
+        this.mostrarToast('No se pudo cargar la previsualización del filtro.', 'danger');
+        this.isPreviewLoading = false;
+      }
+    });
   }
 
   publicarPost(): void {
@@ -92,6 +124,8 @@ export class Tab3Page {
   private resetForm(): void {
     this.selectedFile = null;
     this.previewUrl = null;
+    this.filteredPreviewUrl = null;
+    this.previewMode = 'original';
     this.caption = '';
     this.selectedFilter = 'laplaciano';
   }

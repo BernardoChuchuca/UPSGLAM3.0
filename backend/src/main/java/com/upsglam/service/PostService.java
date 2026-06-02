@@ -106,6 +106,13 @@ public class PostService {
     }
 
     // ─────────────────────────────────────────────────────────────
+    // Previsualización de filtro GPU
+    // ─────────────────────────────────────────────────────────────
+    public Mono<CudaProcessingResponse> previewFilter(String filterName, byte[] imageBytes) {
+        return cudaService.processImage(imageBytes, filterName);
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // Feed público
     // ─────────────────────────────────────────────────────────────
     public Flux<PostResponse> getFeed(UUID authUserId) {

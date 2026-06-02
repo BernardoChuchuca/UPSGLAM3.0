@@ -9,21 +9,34 @@
 
 <ion-content class="ion-padding" color="dark">
   <!-- Zona de previsualización -->
-  <div class="preview-container" (click)="fileInput.click()">
+  <div class="preview-container" style="position: relative;">
     <ng-container *ngIf="previewUrl; else placeholder">
-      <img [src]="previewUrl" class="preview-image" alt="Preview" />
-      <div class="overlay-change">
+      <img [src]="previewMode === 'preview' && filteredPreviewUrl ? filteredPreviewUrl : previewUrl" class="preview-image" alt="Preview" (click)="fileInput.click()" />
+      
+      <!-- Overlay de carga del procesamiento GPU -->
+      <div *ngIf="isPreviewLoading" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 12px; z-index: 10;">
+        <ion-spinner name="crescent" color="primary" style="transform: scale(1.5);"></ion-spinner>
+        <p style="color: white; margin: 16px 0 0 0; font-weight: 600; font-size: 14px; letter-spacing: 0.5px;">PROCESANDO EN GPU...</p>
+      </div>
+
+      <div class="overlay-change" (click)="fileInput.click()">
         <ion-icon name="camera-outline"></ion-icon>
         <span>Cambiar imagen</span>
       </div>
     </ng-container>
     <ng-template #placeholder>
-      <div class="placeholder-content">
+      <div class="placeholder-content" (click)="fileInput.click()">
         <ion-icon name="image-outline" class="placeholder-icon"></ion-icon>
         <p>Toca para seleccionar una imagen</p>
       </div>
     </ng-template>
   </div>
+
+  <!-- Selector de vista (Original vs Preview) -->
+  <ion-segment [(ngModel)]="previewMode" color="primary" class="ion-margin-top" *ngIf="selectedFile && filteredPreviewUrl" style="background: #1e1e1e; border-radius: 8px; padding: 2px;">
+    <ion-segment-button value="original" style="--color: #888; --color-checked: #fff; font-weight: 600;">Original</ion-segment-button>
+    <ion-segment-button value="preview" style="--color: #888; --color-checked: #fff; font-weight: 600;">Con Filtro GPU</ion-segment-button>
+  </ion-segment>
 
   <!-- Input oculto -->
   <input #fileInput type="file" accept="image/*" style="display: none" (change)="onFileSelected($event)" />
@@ -38,7 +51,7 @@
   <!-- Selector de filtro -->
   <ion-item class="custom-item ion-margin-top" lines="none">
     <ion-label color="medium">Filtro GPU (PyCUDA)</ion-label>
-    <ion-select [(ngModel)]="selectedFilter" interface="popover" placeholder="Seleccionar filtro">
+    <ion-select [(ngModel)]="selectedFilter" (ionChange)="onFilterChanged()" interface="popover" placeholder="Seleccionar filtro">
       <ion-select-option value="laplaciano">🔍 Laplaciano</ion-select-option>
       <ion-select-option value="sobel">📐 Sobel</ion-select-option>
       <ion-select-option value="promedio">🌫️ Promedio (Box Blur)</ion-select-option>

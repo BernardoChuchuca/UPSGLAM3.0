@@ -2,6 +2,7 @@ package com.upsglam.controller;
 
 import com.upsglam.dto.request.CreatePostRequest;
 import com.upsglam.dto.response.PostResponse;
+import com.upsglam.dto.response.CudaProcessingResponse;
 import com.upsglam.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,23 @@ public Flux<PostResponse> getFeed(Authentication auth) {
             })
             .flatMap(bytes -> postService.createPost(userId, req, bytes,
                 image.headers().getContentType().toString()))
+            .map(ResponseEntity::ok);
+    }
+
+    @PostMapping(value = "/preview", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Mono<ResponseEntity<CudaProcessingResponse>> previewPost(
+            @RequestParam("filterName") String filterName,
+            @RequestPart("image") FilePart image) {
+        return image.content()
+            .reduce(new byte[0], (acc, buf) -> {
+                byte[] b = new byte[buf.readableByteCount()];
+                buf.read(b);
+                byte[] combined = new byte[acc.length + b.length];
+                System.arraycopy(acc, 0, combined, 0, acc.length);
+                System.arraycopy(b, 0, combined, acc.length, b.length);
+                return combined;
+            })
+            .flatMap(bytes -> postService.previewFilter(filterName, bytes))
             .map(ResponseEntity::ok);
     }
 

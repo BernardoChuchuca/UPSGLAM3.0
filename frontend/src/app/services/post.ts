@@ -33,6 +33,18 @@ export class PostService {
     return this.http.post(BACKEND_URL, formData, { headers });
   }
 
+  obtenerPrevisualizacion(imagen: File, filterName: string): Observable<any> {
+    const token = localStorage.getItem('token');
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    const formData = new FormData();
+    formData.append('image', imagen, imagen.name);
+    return this.http.post(`${BACKEND_URL}/preview?filterName=${filterName}`, formData, { headers });
+  }
+
   obtenerPosts(): Observable<any[]> {
     const token = localStorage.getItem('token');
     let headers = new HttpHeaders();
