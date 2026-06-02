@@ -10,6 +10,7 @@ import {
 import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
 import { PostService } from '../services/post';
 import { AuthService } from '../services/auth.service';
+import { environment } from '../../environments/environment';
 import { addIcons } from 'ionicons';
 import { heartOutline, heart, chatbubbleOutline, trashOutline, sendOutline, imagesOutline } from 'ionicons/icons';
 
@@ -150,7 +151,7 @@ export class Tab1Page implements OnInit {
 
     console.log('Enviando imagen al backend...');
 
-    this.http.post('http://localhost:8080/api/posts', formData, { headers }).subscribe({
+    this.http.post(`${environment.apiUrl}/posts`, formData, { headers }).subscribe({
       next: (res: any) => {
         console.log('¡Procesamiento exitoso en GPU y publicado!', res);
         this.selectedFile = null;

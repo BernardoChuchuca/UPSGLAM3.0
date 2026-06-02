@@ -48,7 +48,9 @@ export class LoginPage {
       },
       error: (err) => {
         this.isLoading = false;
-        this.mostrarToast('Correo o contraseña incorrectos.', 'danger');
+        console.error('Login error detail:', err);
+        const detailedError = err.error?.message || err.message || JSON.stringify(err);
+        this.mostrarToast('Error en login: ' + detailedError, 'danger');
       }
     });
   }

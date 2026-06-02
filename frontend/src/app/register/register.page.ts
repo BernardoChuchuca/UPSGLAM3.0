@@ -54,7 +54,9 @@ export class RegisterPage {
       },
       error: (err) => {
         this.isLoading = false;
-        this.mostrarToast('Error al registrar. Intenta de nuevo.', 'danger');
+        console.error('Registration error detail:', err);
+        const detailedError = err.error?.message || err.message || JSON.stringify(err);
+        this.mostrarToast('Error al registrar: ' + detailedError, 'danger');
       }
     });
   }

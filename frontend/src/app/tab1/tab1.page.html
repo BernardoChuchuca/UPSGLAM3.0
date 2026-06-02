@@ -78,7 +78,7 @@
       
       <ion-content color="dark">
         <!-- Lista de comentarios -->
-        <ion-list lines="none" style="background: transparent; padding: 16px;">
+        <ion-list lines="none" style="background: transparent; padding: 16px 16px 80px 16px;">
           <ion-item *ngFor="let comment of comments" style="--background: transparent; margin-bottom: 12px; --padding-start: 0;">
             <ion-label class="ion-text-wrap">
               <h3 style="color: #fff; font-weight: bold; margin-bottom: 4px;">
@@ -103,23 +103,21 @@
             <p style="margin: 0;">No hay comentarios aún. ¡Sé el primero en comentar!</p>
           </div>
         </ion-list>
-      </ion-content>
-      
-      <!-- Footer para escribir nuevo comentario -->
-      <ion-footer style="background: #1e1e1e;">
-        <ion-toolbar color="dark">
-          <ion-item lines="none" style="--background: transparent; width: 100%;">
+
+        <!-- Input para escribir nuevo comentario pegado al fondo -->
+        <div style="position: sticky; bottom: 0; left: 0; right: 0; background: #1e1e1e; padding: 8px 16px; border-top: 1px solid #2c2c2c; z-index: 10;">
+          <ion-item lines="none" style="--background: transparent; --padding-start: 0; --inner-padding-end: 0; width: 100%;">
             <ion-input placeholder="Escribe un comentario..." 
                        [(ngModel)]="newCommentText" 
                        (keyup.enter)="agregarComentario()" 
                        style="--color: #fff; margin-right: 8px;">
             </ion-input>
-            <ion-button slot="end" fill="clear" color="primary" [disabled]="!newCommentText.trim()" (click)="agregarComentario()">
-              <ion-icon slot="icon-only" name="send-outline"></ion-icon>
+            <ion-button fill="clear" color="primary" [disabled]="!newCommentText.trim()" (click)="agregarComentario()" style="margin: 0; height: 36px;">
+              <ion-icon slot="icon-only" name="send-outline" style="font-size: 24px;"></ion-icon>
             </ion-button>
           </ion-item>
-        </ion-toolbar>
-      </ion-footer>
+        </div>
+      </ion-content>
     </ng-template>
   </ion-modal>
 

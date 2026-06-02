@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
-const BACKEND_URL = 'http://localhost:8080/api/posts';
+const BACKEND_URL = `${environment.apiUrl}/posts`;
 
 export interface CreatePostRequest {
   caption: string;
@@ -114,7 +115,7 @@ export class PostService {
     if (token) {
       headers = headers.set('Authorization', `Bearer ${token}`);
     }
-    return this.http.get<any[]>('http://localhost:8080/api/processing/history', { headers });
+    return this.http.get<any[]>(`${environment.apiUrl}/processing/history`, { headers });
   }
 
   deletePost(postId: string): Observable<void> {

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">UPSGlam</string>
+    <string name="title_activity_main">UPSGlam</string>
+    <string name="package_name">com.upsglam.app</string>
+    <string name="custom_url_scheme">com.upsglam.app</string>
+</resources>
