@@ -38,6 +38,61 @@
     <ion-segment-button value="preview" style="--color: #888; --color-checked: #fff; font-weight: 600;">Con Filtro GPU</ion-segment-button>
   </ion-segment>
 
+  <!-- Información de la imagen seleccionada (Métricas GPU) -->
+  <ion-card *ngIf="previewMetrics" style="background: #1e1e1e; margin: 16px 0 0 0; border-radius: 12px; border: 1px solid #2a2a2a; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+    <ion-card-header style="padding: 12px 16px 8px 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 15px; font-weight: bold; color: #fff;">Información de la Imagen (GPU)</span>
+        <ion-chip [color]="previewMetrics.status === 'SUCCESS' ? 'success' : 'danger'" style="margin: 0; font-size: 10px; font-weight: bold; text-transform: uppercase;">
+          <ion-icon [name]="previewMetrics.status === 'SUCCESS' ? 'checkmark-circle-outline' : 'alert-circle-outline'"></ion-icon>
+          <ion-label>{{ previewMetrics.status }}</ion-label>
+        </ion-chip>
+      </div>
+    </ion-card-header>
+
+    <ion-card-content style="padding: 0 16px 16px 16px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px;">
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Dimensión Bloque</span>
+          <span style="font-size: 12px; color: #fff; font-weight: 500; display: flex; align-items: center;">
+            <ion-icon name="cube-outline" style="margin-right: 4px; font-size: 13px; color: #5260ff;"></ion-icon>
+            {{ previewMetrics.blockDim || 'N/A' }}
+          </span>
+        </div>
+        
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Dimensión Grid</span>
+          <span style="font-size: 12px; color: #fff; font-weight: 500; display: flex; align-items: center;">
+            <ion-icon name="grid-outline" style="margin-right: 4px; font-size: 13px; color: #5260ff;"></ion-icon>
+            {{ previewMetrics.gridDim || 'N/A' }}
+          </span>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Hilos Lanzados</span>
+          <span style="font-size: 12px; color: #fff; font-weight: 500;">
+            {{ previewMetrics.totalThreads ? (previewMetrics.totalThreads | number) : 'N/A' }}
+          </span>
+        </div>
+
+        <div style="display: flex; flex-direction: column;">
+          <span style="font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Tiempo Kernel</span>
+          <span style="font-size: 12px; color: #2dd36f; font-weight: bold; display: flex; align-items: center;">
+            <ion-icon name="time-outline" style="margin-right: 4px; font-size: 13px; color: #2dd36f;"></ion-icon>
+            {{ previewMetrics.kernelTimeMs ? (previewMetrics.kernelTimeMs | number:'1.2-2') + ' ms' : 'N/A' }}
+          </span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; grid-column: span 2;">
+          <span style="font-size: 9px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Tamaño de Imagen</span>
+          <span style="font-size: 12px; color: #fff; font-weight: 500;">
+            {{ previewMetrics.width && previewMetrics.height ? previewMetrics.width + ' x ' + previewMetrics.height + ' px' : 'N/A' }}
+          </span>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
   <!-- Input oculto -->
   <input #fileInput type="file" accept="image/*" style="display: none" (change)="onFileSelected($event)" />
 

@@ -6,6 +6,7 @@ import com.upsglam.dto.response.PostResponse;
 import com.upsglam.dto.response.ProfileResponse;
 import com.upsglam.model.GpuMetrics;
 import com.upsglam.model.Post;
+import com.upsglam.model.Repost;
 import com.upsglam.model.ProcessingHistory;
 import com.upsglam.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,10 @@ public class PostService {
     private final GpuMetricsRepository        metricsRepo;
     private final CudaService                 cudaService;
     private final StorageService              storageService;
+    
+    // Inyección de nuevos repositorios
+    private final FollowRepository            followRepo;
+    private final RepostRepository            repostRepo;
 
     // ─────────────────────────────────────────────────────────────
     // Crear post con procesamiento GPU
@@ -139,15 +144,60 @@ public class PostService {
     }
 
     // ─────────────────────────────────────────────────────────────
+    // LÓGICA DE REPOSTS
+    // ─────────────────────────────────────────────────────────────
+
+    public Mono<Void> toggleRepost(UUID authUserId, UUID postId) {
+        return profileRepo.findByAuthUserId(authUserId)
+                .flatMap(profile -> repostRepo.findByPostIdAndUserId(postId, profile.getId())
+                        .flatMap(repost -> repostRepo.delete(repost).then(Mono.just(true)))
+                        .switchIfEmpty(Mono.defer(() -> repostRepo.save(
+                                Repost.builder()
+                                        .postId(postId)
+                                        .userId(profile.getId())
+                                        .createdAt(OffsetDateTime.now())
+                                        .build()
+                        ).thenReturn(false)))
+                )
+                .then();
+    }
+
+    public Flux<PostResponse> getUserReposts(UUID profileId, UUID authUserId) {
+        return repostRepo.findByUserIdOrderByCreatedAtDesc(profileId)
+                .flatMap(repost -> postRepo.findById(repost.getPostId())
+                        .flatMap(post -> buildPostResponse(post, null, null, authUserId))
+                );
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // Helpers privados
     // ─────────────────────────────────────────────────────────────
     private Mono<PostResponse> buildPostResponse(Post post, Object ignoredProfile,
                                                    Object ignoredFilter, UUID authUserId) {
         Mono<ProfileResponse> authorMono = profileRepo.findById(post.getUserId())
-                .map(p -> ProfileResponse.builder()
-                        .id(p.getId()).username(p.getUsername())
-                        .avatarUrl(p.getAvatarUrl()).bio(p.getBio())
-                        .createdAt(p.getCreatedAt()).build());
+                .flatMap(p -> {
+                    // Cargar si sigo al autor y estadísticas del autor
+                    Mono<Boolean> followedByMeMono = authUserId == null
+                            ? Mono.just(false)
+                            : profileRepo.findByAuthUserId(authUserId)
+                                .flatMap(me -> followRepo.existsByFollowerIdAndFollowingId(me.getId(), p.getId()))
+                                .defaultIfEmpty(false);
+
+                    Mono<Long> followersMono = followRepo.countByFollowingId(p.getId());
+                    Mono<Long> followingMono = followRepo.countByFollowerId(p.getId());
+
+                    return Mono.zip(followedByMeMono, followersMono, followingMono)
+                            .map(t -> ProfileResponse.builder()
+                                    .id(p.getId())
+                                    .username(p.getUsername())
+                                    .avatarUrl(p.getAvatarUrl())
+                                    .bio(p.getBio())
+                                    .createdAt(p.getCreatedAt())
+                                    .followedByMe(t.getT1())
+                                    .followersCount(t.getT2())
+                                    .followingCount(t.getT3())
+                                    .build());
+                });
 
         Mono<Long>    likeCountMono = likeRepo.countByPostId(post.getId());
         Mono<String>  filterNameMono = filterRepo.findById(post.getFilterId())
@@ -159,7 +209,15 @@ public class PostService {
                     .flatMap(p -> likeRepo.existsByPostIdAndUserId(post.getId(), p.getId()))
                     .defaultIfEmpty(false);
 
-        return Mono.zip(authorMono, likeCountMono, filterNameMono, likedMono)
+        // Reposteos del post
+        Mono<Long> repostCountMono = repostRepo.countByPostId(post.getId());
+        Mono<Boolean> repostedByMeMono = authUserId == null
+                ? Mono.just(false)
+                : profileRepo.findByAuthUserId(authUserId)
+                    .flatMap(p -> repostRepo.existsByPostIdAndUserId(post.getId(), p.getId()))
+                    .defaultIfEmpty(false);
+
+        return Mono.zip(authorMono, likeCountMono, filterNameMono, likedMono, repostCountMono, repostedByMeMono)
                 .map(t -> PostResponse.builder()
                         .id(post.getId())
                         .caption(post.getCaption())
@@ -169,6 +227,8 @@ public class PostService {
                         .author(t.getT1())
                         .likeCount(t.getT2())
                         .likedByMe(t.getT4())
+                        .repostCount(t.getT5())
+                        .repostedByMe(t.getT6())
                         .createdAt(post.getCreatedAt())
                         .build());
     }

@@ -312,5 +312,63 @@ ON CONFLICT (id) DO NOTHING;
 
 
 -- ============================================================
+-- 012 — TABLA: follows
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.follows (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    follower_id   UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    following_id  UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_follow_per_user UNIQUE (follower_id, following_id),
+    CONSTRAINT chk_no_self_follow CHECK (follower_id <> following_id)
+);
+
+ALTER TABLE public.follows ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "follows_select_public" ON public.follows;
+CREATE POLICY "follows_select_public"
+    ON public.follows FOR SELECT USING (TRUE);
+
+DROP POLICY IF EXISTS "follows_insert_own" ON public.follows;
+CREATE POLICY "follows_insert_own"
+    ON public.follows FOR INSERT
+    WITH CHECK (follower_id = (SELECT id FROM public.profiles WHERE auth_user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "follows_delete_own" ON public.follows;
+CREATE POLICY "follows_delete_own"
+    ON public.follows FOR DELETE
+    USING (follower_id = (SELECT id FROM public.profiles WHERE auth_user_id = auth.uid()));
+
+
+-- ============================================================
+-- 013 — TABLA: reposts
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.reposts (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    post_id       UUID NOT NULL REFERENCES public.posts(id) ON DELETE CASCADE,
+    user_id       UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_repost_per_user_post UNIQUE (post_id, user_id)
+);
+
+ALTER TABLE public.reposts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "reposts_select_public" ON public.reposts;
+CREATE POLICY "reposts_select_public"
+    ON public.reposts FOR SELECT USING (TRUE);
+
+DROP POLICY IF EXISTS "reposts_insert_own" ON public.reposts;
+CREATE POLICY "reposts_insert_own"
+    ON public.reposts FOR INSERT
+    WITH CHECK (user_id = (SELECT id FROM public.profiles WHERE auth_user_id = auth.uid()));
+
+DROP POLICY IF EXISTS "reposts_delete_own" ON public.reposts;
+CREATE POLICY "reposts_delete_own"
+    ON public.reposts FOR DELETE
+    USING (user_id = (SELECT id FROM public.profiles WHERE auth_user_id = auth.uid()));
+
+
+-- ============================================================
 -- FIN DEL SCRIPT
 -- ============================================================
+

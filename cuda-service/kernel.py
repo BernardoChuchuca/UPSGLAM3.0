@@ -515,10 +515,7 @@ def aplicar_sobel(img_bgr: np.ndarray) -> tuple[np.ndarray, dict]:
 # ──────────────────────────────────────────────────────────────────────────────
 def aplicar_marca_agua_ups(img_bgr: np.ndarray,
                             alpha: float = 0.85) -> tuple[np.ndarray, dict]:
-    """
-    Superpone el logotipo de la UPS (logoupscolor.svg) como una marca de agua
-    con canal de transparencia (Alpha) en la esquina inferior derecha.
-    """
+    
     import cairosvg
     import io
     from PIL import Image

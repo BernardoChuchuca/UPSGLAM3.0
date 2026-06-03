@@ -11,11 +11,20 @@
     <ion-card *ngFor="let post of posts" class="post-card">
       
       <!-- Cabecera del post -->
-      <ion-card-header>
-        <ion-label>
+      <ion-card-header style="display: flex; align-items: center; justify-content: space-between; flex-direction: row; width: 100%;">
+        <ion-label style="flex-grow: 1;">
           <h2>{{ post.author?.username || 'Usuario' }}</h2>
           <p>{{ post.filterName }} · {{ post.createdAt | date:'short' }}</p>
         </ion-label>
+        
+        <!-- Botón de seguir / siguiendo (solo si no es el propio usuario) -->
+        <ion-button fill="solid" size="small" 
+                    *ngIf="currentUserProfile && post.author?.id !== currentUserProfile.id"
+                    [color]="post.author?.followedByMe ? 'medium' : 'primary'"
+                    (click)="toggleFollow(post)"
+                    style="margin: 0; text-transform: none; font-weight: bold; --border-radius: 8px; font-size: 13px; height: 32px;">
+          {{ post.author?.followedByMe ? 'Siguiendo' : 'Seguir' }}
+        </ion-button>
       </ion-card-header>
 
       <!-- Imagen procesada -->
@@ -47,9 +56,18 @@
                       style="color: #ffffff; font-size: 24px;">
             </ion-icon>
           </ion-button>
+
+          <!-- Botón de Repost -->
+          <ion-button fill="clear" (click)="toggleRepost(post)" style="--padding-start: 0; --padding-end: 0; margin: 0; height: 32px;">
+            <ion-icon slot="icon-only" 
+                      [name]="post.repostedByMe ? 'repeat' : 'repeat-outline'" 
+                      [style.color]="post.repostedByMe ? '#2dd36f' : '#ffffff'"
+                      style="font-size: 26px;">
+            </ion-icon>
+          </ion-button>
           
           <span style="font-weight: 600; color: #ffffff; font-size: 14px; margin-left: 4px;">
-            {{ post.likeCount || 0 }} likes
+            {{ post.likeCount || 0 }} likes · {{ post.repostCount || 0 }} reposteos
           </span>
         </div>
       </ion-card-content>

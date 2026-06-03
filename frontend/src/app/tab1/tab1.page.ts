@@ -5,14 +5,17 @@ import {
   IonHeader, IonToolbar, IonTitle, IonContent,
   IonList, IonCard, IonCardHeader, IonLabel,
   IonCardContent, IonButton, IonIcon, IonModal,
-  IonButtons, IonFooter, IonItem, IonInput
+  IonButtons, IonItem, IonInput
 } from '@ionic/angular/standalone';
 import { HttpClient, HttpClientModule, HttpHeaders } from '@angular/common/http';
 import { PostService } from '../services/post';
 import { AuthService } from '../services/auth.service';
 import { environment } from '../../environments/environment';
 import { addIcons } from 'ionicons';
-import { heartOutline, heart, chatbubbleOutline, trashOutline, sendOutline, imagesOutline } from 'ionicons/icons';
+import { 
+  heartOutline, heart, chatbubbleOutline, trashOutline, 
+  sendOutline, imagesOutline, repeatOutline, repeat 
+} from 'ionicons/icons';
 
 @Component({
   selector: 'app-tab1',
@@ -24,7 +27,7 @@ import { heartOutline, heart, chatbubbleOutline, trashOutline, sendOutline, imag
     IonHeader, IonToolbar, IonTitle, IonContent,
     IonList, IonCard, IonCardHeader, IonLabel,
     IonCardContent, IonButton, IonIcon, IonModal,
-    IonButtons, IonFooter, IonItem, IonInput
+    IonButtons, IonItem, IonInput
   ]
 })
 export class Tab1Page implements OnInit {
@@ -43,7 +46,10 @@ export class Tab1Page implements OnInit {
     private authService: AuthService,
     private http: HttpClient
   ) {
-    addIcons({ heartOutline, heart, chatbubbleOutline, trashOutline, sendOutline, imagesOutline });
+    addIcons({ 
+      heartOutline, heart, chatbubbleOutline, trashOutline, 
+      sendOutline, imagesOutline, repeatOutline, repeat 
+    });
   }
 
   ngOnInit() {
@@ -71,6 +77,43 @@ export class Tab1Page implements OnInit {
       },
       error: (err) => {
         console.error('Error al cambiar like:', err);
+      }
+    });
+  }
+
+  toggleFollow(post: any) {
+    if (!post.author || !this.currentUserProfile) return;
+    if (post.author.id === this.currentUserProfile.id) return; // No seguirse a sí mismo
+
+    const authorId = post.author.id;
+    const isFollowing = post.author.followedByMe;
+    const action = isFollowing
+      ? this.postService.unfollowUser(authorId)
+      : this.postService.followUser(authorId);
+
+    action.subscribe({
+      next: () => {
+        // Actualizar todos los posts de este autor en el feed
+        this.posts.forEach(p => {
+          if (p.author && p.author.id === authorId) {
+            p.author.followedByMe = !isFollowing;
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error al alternar seguimiento:', err);
+      }
+    });
+  }
+
+  toggleRepost(post: any) {
+    this.postService.toggleRepost(post.id).subscribe({
+      next: () => {
+        post.repostedByMe = !post.repostedByMe;
+        post.repostCount = post.repostedByMe ? (post.repostCount + 1) : Math.max(0, post.repostCount - 1);
+      },
+      error: (err) => {
+        console.error('Error al alternar repost:', err);
       }
     });
   }

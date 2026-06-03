@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 const BACKEND_URL = `${environment.apiUrl}/posts`;
+const USERS_URL = `${environment.apiUrl}/users`;
 
 export interface CreatePostRequest {
   caption: string;
@@ -28,7 +29,7 @@ export class PostService {
     const formData = new FormData();
     formData.append('image', imagen, imagen.name);
     formData.append(
-      'data',  // ← era 'post', el controlador espera 'data'
+      'data',
       new Blob([JSON.stringify(postData)], { type: 'application/json' })
     );
     return this.http.post(BACKEND_URL, formData, { headers });
@@ -125,5 +126,73 @@ export class PostService {
       headers = headers.set('Authorization', `Bearer ${token}`);
     }
     return this.http.delete<void>(`${BACKEND_URL}/${postId}`, { headers });
+  }
+
+  getMyProfile(): Observable<any> {
+    const token = localStorage.getItem('token');
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return this.http.get<any>(`${USERS_URL}/me`, { headers });
+  }
+
+
+  // ─── MÉTODOS DE REPOSTS ────────────────────────────────────────
+
+  toggleRepost(postId: string): Observable<void> {
+    const token = localStorage.getItem('token');
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return this.http.post<void>(`${BACKEND_URL}/${postId}/repost`, {}, { headers });
+  }
+
+  getUserReposts(profileId: string): Observable<any[]> {
+    const token = localStorage.getItem('token');
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return this.http.get<any[]>(`${BACKEND_URL}/reposts/user/${profileId}`, { headers });
+  }
+
+  // ─── MÉTODOS DE SEGUIMIENTO ────────────────────────────────────
+
+  followUser(profileId: string): Observable<void> {
+    const token = localStorage.getItem('token');
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return this.http.post<void>(`${USERS_URL}/${profileId}/follow`, {}, { headers });
+  }
+
+  unfollowUser(profileId: string): Observable<void> {
+    const token = localStorage.getItem('token');
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return this.http.delete<void>(`${USERS_URL}/${profileId}/follow`, { headers });
+  }
+
+  getFollowers(profileId: string): Observable<any[]> {
+    const token = localStorage.getItem('token');
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return this.http.get<any[]>(`${USERS_URL}/${profileId}/followers`, { headers });
+  }
+
+  getFollowing(profileId: string): Observable<any[]> {
+    const token = localStorage.getItem('token');
+    let headers = new HttpHeaders();
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+    return this.http.get<any[]>(`${USERS_URL}/${profileId}/following`, { headers });
   }
 }

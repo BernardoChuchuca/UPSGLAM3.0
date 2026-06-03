@@ -1,6 +1,6 @@
 # UPSGlam 3.0 — Sistema Social de Procesamiento Digital de Imágenes en GPU
 
-UPSGlam 3.0 es una plataforma social premium (estilo Instagram) que permite a los usuarios publicar fotos, interactuar mediante Likes y Comentarios, y aplicar filtros avanzados de procesamiento digital de imágenes acelerados por hardware en la GPU (utilizando **NVIDIA CUDA** y **PyCUDA**).
+UPSGlam 3.0 es una plataforma social estilo Instagram que permite a los usuarios publicar fotos, interactuar mediante Likes, Reposts, Seguidos y Comentarios, y aplicar filtros avanzados de procesamiento digital de imágenes acelerados por hardware en la GPU (utilizando **NVIDIA CUDA** y **PyCUDA**).
 
 ---
 
@@ -19,11 +19,11 @@ graph TD
 ```
 
 ### Componentes Principales:
-1. **Frontend (Ionic Angular Standalone):** Una aplicación móvil/web SPA responsiva. Renderiza el feed público con interacciones de likes (autolikes soportados) y comentarios en un panel deslizable. En la pestaña de Perfil, permite ver las fotos en grande mediante un modal y eliminarlas, además de listar un historial de métricas GPU de procesamiento de cada foto.
-2. **Backend (Spring WebFlux):** API reactiva y no bloqueante construida con Java 21 y Spring Boot 3. Gestiona la seguridad mediante tokens JWT emitidos por Supabase, orquesta las cargas a Storage, se comunica reactivamente con la base de datos a través de **R2DBC** y coordina el envío de imágenes al servicio CUDA.
-3. **Servicio GPU (FastAPI + PyCUDA):** Microservicio escrito en Python 3.10. Utiliza PyCUDA para compilar dinámicamente y ejecutar kernels escritos en C/C++ directos en la GPU. Soporta 6 filtros: Laplaciano, Sobel, Promedio (Box Blur), Nitidez, Mediana y Marca de Agua UPS (Superposición dinámica del logo SVG con canal alfa).
+1. **Frontend (Ionic Angular Standalone):** Una aplicación móvil/web responsiva. Renderiza el feed público con interacciones de likes (autolikes soportados), comentarios en un panel deslizable, reposteo de publicaciones y botones de seguimiento (Seguir/Siguiendo) integrados. En la pestaña de Perfil, permite ver los posts propios y reposteados, eliminar posts, quitar reposteos, consultar las listas flotantes de seguidores/seguidos para gestionar relaciones de seguimiento y visualizar el historial de métricas GPU de procesamiento de cada foto.
+2. **Backend (Spring WebFlux):** API reactiva y no bloqueante construida con Java 21 y Spring Boot 3. Gestiona la seguridad mediante tokens JWT emitidos por Supabase, orquesta las cargas a Storage, se comunica reactivamente con la base de datos a través de **R2DBC**, gestiona el ecosistema de seguidores y reposteos, y coordina el envío de imágenes al servicio CUDA.
+3. **Servicio GPU (FastAPI + PyCUDA):** Microservicio escrito en Python 3.10. Utiliza PyCUDA para compilar dinámicamente y ejecutar kernels escritos en C/C++ directos en la GPU. Soporta 6 filtros: Laplaciano, Sobel, Promedio (Box Blur), Nitidez, Mediana y Marca de Agua UPS.
 4. **Base de Datos y Almacenamiento (Supabase):**
-   * **PostgreSQL:** Tablas optimizadas para perfiles, publicaciones, likes, comentarios e historial de rendimiento de GPU.
+   * **PostgreSQL:** Tablas optimizadas para perfiles, publicaciones, likes, comentarios, seguidores, reposteos  e historial de rendimiento de GPU.
    * **Supabase Storage:** Almacenamiento de objetos dividido en dos buckets públicos: `originals` (imágenes de entrada) y `processed` (resultados del procesamiento GPU).
 
 ---
@@ -34,7 +34,7 @@ El backend y el frontend se sincronizan con Supabase para la autenticación y la
 
 ### A. Preparación del Schema de Base de Datos
 Debes ejecutar el archivo [supabase_setup.sql](file:///home/tania/Documents/compu/UPSGLAM3.0/supabase_setup.sql) en el **SQL Editor** de tu consola de Supabase. Este script realiza lo siguiente:
-1. Crea las tablas principales: `profiles`, `filters`, `posts`, `likes`, `comments`, `processing_history` y `gpu_metrics`.
+1. Crea las tablas principales: `profiles`, `filters`, `posts`, `likes`, `comments`, `processing_history`, `follows`, `reposts` y `gpu_metrics`.
 2. Inserta los filtros base en la tabla `filters` (ej. `marca_agua_ups`).
 3. Define un **Trigger y una Función** (`handle_new_user`) para que cada vez que un usuario se registre en la sección de autenticación de Supabase, se cree automáticamente su perfil correspondiente en la tabla pública `profiles`.
 
@@ -124,8 +124,11 @@ El archivo `docker-compose.yml` une los contenedores dentro de la red compartida
    * En el feed verás la foto procesada final.
    * Puedes dar Like pulsando en el icono del corazón (cambiará a rojo y aumentará el contador).
    * Pulsa la burbuja de diálogo para abrir la sección de comentarios deslizante, donde podrás redactar un comentario o borrar los tuyos.
-4. **Visualización y Eliminación (Perfil):**
-   * Ve a la pestaña **Perfil** para ver la cuadrícula de tus publicaciones.
-   * Haz clic en cualquier foto de la cuadrícula para abrirla en **tamaño grande**, mostrando el nombre del filtro GPU aplicado y su descripción.
-   * Pulsa el botón rojo **Eliminar publicación** para borrar el post del feed y la base de datos permanentemente.
+   * **Seguir/Siguiendo:** Puedes seguir a otros usuarios directamente desde sus publicaciones haciendo clic en el botón **Seguir**. El botón cambiará dinámicamente a **Siguiendo**.
+   * **Repostear:** Haz clic en el icono de reposteo (flechas circulares) al lado de los comentarios para compartir el post. El icono cambiará a color verde y se sumará al contador global de reposteos.
+4. **Visualización, Seguidores y Reposts (Perfil):**
+   * Ve a la pestaña **Perfil** para ver la cuadrícula de tus publicaciones en el segmento **Posts**.
+   * Haz clic en cualquier foto de la cuadrícula para abrirla en **tamaño grande**, mostrando el nombre del filtro GPU aplicado y su descripción. Si es un post propio, podrás eliminarlo usando el botón rojo **Eliminar publicación**.
+   * Cambia al segmento **Reposts** para ver todos los posts de otros usuarios que has compartido. Al abrirlos, podrás eliminarlos de tus reposteos usando el botón **Quitar Repost**.
+   * Haz clic en el número de **Seguidores** o **Seguidos** en la cabecera de tu perfil para desplegar una lista flotante de los usuarios correspondientes. Desde allí podrás seguirlos de vuelta ("Seguir de vuelta") o dejar de seguirlos ("Dejar de seguir") en tiempo real.
    * Cambia al segmento **Historial GPU** para ver la bitácora técnica de rendimiento de cada procesamiento (Dimensión del bloque, grid, cantidad de hilos lanzados y tiempo exacto de ejecución del kernel de la GPU en milisegundos).

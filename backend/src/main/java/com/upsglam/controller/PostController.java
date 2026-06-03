@@ -14,21 +14,20 @@ import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import java.util.UUID;
-import java.util.Map;
-import java.util.HashMap;
 
 @RestController
 @RequestMapping("/api/posts")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class PostController {
+
     private final PostService postService;
 
-@GetMapping("/feed")
-public Flux<PostResponse> getFeed(Authentication auth) {
-    UUID userId = auth != null ? (UUID) auth.getPrincipal() : null;
-    return postService.getFeed(userId);
-}
+    @GetMapping("/feed")
+    public Flux<PostResponse> getFeed(Authentication auth) {
+        UUID userId = auth != null ? (UUID) auth.getPrincipal() : null;
+        return postService.getFeed(userId);
+    }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Mono<ResponseEntity<PostResponse>> createPost(
@@ -77,5 +76,19 @@ public Flux<PostResponse> getFeed(Authentication auth) {
     public Mono<ResponseEntity<Void>> deletePost(@PathVariable UUID postId, Authentication auth) {
         return postService.deletePost((UUID) auth.getPrincipal(), postId)
             .thenReturn(ResponseEntity.<Void>noContent().build());
+    }
+
+    // ─── ENDPOINTS DE REPOSTS ────────────────────────────────────
+
+    @PostMapping("/{postId}/repost")
+    public Mono<ResponseEntity<Void>> toggleRepost(@PathVariable UUID postId, Authentication auth) {
+        return postService.toggleRepost((UUID) auth.getPrincipal(), postId)
+                .thenReturn(ResponseEntity.ok().<Void>build());
+    }
+
+    @GetMapping("/reposts/user/{profileId}")
+    public Flux<PostResponse> getUserReposts(@PathVariable UUID profileId, Authentication auth) {
+        UUID userId = auth != null ? (UUID) auth.getPrincipal() : null;
+        return postService.getUserReposts(profileId, userId);
     }
 }

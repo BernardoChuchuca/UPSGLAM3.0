@@ -20,10 +20,18 @@
         </div>
       </div>
       
-      <div class="profile-stats">
+      <div class="profile-stats" style="display: flex; gap: 20px; align-items: center; justify-content: space-around; width: 100%;">
         <div class="stat-item">
           <span class="stat-value">{{ posts.length }}</span>
-          <span class="stat-label">Publicaciones</span>
+          <span class="stat-label">Posts</span>
+        </div>
+        <div class="stat-item" (click)="abrirSeguidores()" style="cursor: pointer; padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,0.05);">
+          <span class="stat-value">{{ profile.followersCount || 0 }}</span>
+          <span class="stat-label">Seguidores</span>
+        </div>
+        <div class="stat-item" (click)="abrirSeguidos()" style="cursor: pointer; padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,0.05);">
+          <span class="stat-value">{{ profile.followingCount || 0 }}</span>
+          <span class="stat-label">Seguidos</span>
         </div>
       </div>
     </div>
@@ -41,7 +49,11 @@
     <ion-segment [(ngModel)]="activeTab" color="primary" class="profile-segment" style="margin-bottom: 20px;">
       <ion-segment-button value="posts">
         <ion-icon name="images-outline"></ion-icon>
-        <ion-label>Publicaciones</ion-label>
+        <ion-label>Posts</ion-label>
+      </ion-segment-button>
+      <ion-segment-button value="reposts">
+        <ion-icon name="repeat-outline"></ion-icon>
+        <ion-label>Reposts</ion-label>
       </ion-segment-button>
       <ion-segment-button value="history">
         <ion-icon name="hardware-chip-outline"></ion-icon>
@@ -66,6 +78,23 @@
       </div>
     </div>
 
+    <!-- Pestaña de Reposts -->
+    <div *ngIf="activeTab === 'reposts'">
+      <div class="posts-grid" *ngIf="reposts.length > 0">
+        <div class="grid-item" *ngFor="let post of reposts" (click)="selectedPost = post">
+          <img [src]="post.processedImageUrl || post.originalImageUrl" />
+          <div class="delete-overlay" style="background: rgba(45, 211, 111, 0.4);">
+            <ion-icon name="repeat-outline" style="color: #2dd36f;"></ion-icon>
+          </div>
+        </div>
+      </div>
+
+      <div class="no-posts" *ngIf="reposts.length === 0">
+        <ion-icon name="repeat-outline"></ion-icon>
+        <p>No has reposteado ninguna publicación aún</p>
+      </div>
+    </div>
+
     <!-- Pestaña de Historial GPU -->
     <div *ngIf="activeTab === 'history'">
       <div *ngIf="history.length > 0">
@@ -84,14 +113,11 @@
           </ion-card-header>
 
           <ion-card-content style="padding: 0 16px 16px 16px;">
-            <!-- Contenido principal: Thumbnail e información técnica -->
             <div style="display: flex; gap: 16px; align-items: flex-start;">
-              <!-- Miniatura -->
               <div style="width: 80px; height: 80px; border-radius: 8px; overflow: hidden; background: #333; flex-shrink: 0;">
                 <img [src]="metric.processedImageUrl || metric.originalImageUrl" style="width: 100%; height: 100%; object-fit: cover;" />
               </div>
 
-              <!-- Tabla de datos técnicos -->
               <div style="flex-grow: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px;">
                 <div style="display: flex; flex-direction: column;">
                   <span style="font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 0.5px;">Dimensión Bloque</span>
@@ -142,7 +168,7 @@
       </div>
     </div>
 
-    <!-- Modal para ver la imagen en grande y eliminar -->
+    <!-- Modal para ver la publicación detallada -->
     <ion-modal [isOpen]="selectedPost !== null" (didDismiss)="selectedPost = null">
       <ng-template>
         <ion-header>
@@ -161,6 +187,9 @@
             </div>
             
             <div style="padding: 12px 0;">
+              <p style="font-size: 14px; color: #888; margin: 0 0 4px 0;">
+                Publicado por: <span style="color: #fff; font-weight: bold;">@{{ selectedPost.author?.username || 'Usuario' }}</span>
+              </p>
               <p style="font-size: 16px; color: #fff; margin: 0 0 8px 0; font-weight: 500;">
                 {{ selectedPost.caption || 'Sin descripción' }}
               </p>
@@ -170,12 +199,113 @@
             </div>
             
             <div style="padding-bottom: 8px;">
-              <ion-button expand="block" color="danger" (click)="confirmarBorrarPost(selectedPost.id)" style="font-weight: 600;">
+              <!-- Botón Eliminar Post propio -->
+              <ion-button expand="block" color="danger" 
+                          *ngIf="selectedPost.author?.id === profile.id" 
+                          (click)="confirmarBorrarPost(selectedPost.id)" 
+                          style="font-weight: 600;">
                 <ion-icon name="trash-outline" slot="start"></ion-icon>
                 Eliminar publicación
               </ion-button>
+
+              <!-- Botón Quitar Repost de publicación de terceros -->
+              <ion-button expand="block" color="warning" 
+                          *ngIf="selectedPost.author?.id !== profile.id" 
+                          (click)="confirmarQuitarRepost(selectedPost.id)" 
+                          style="font-weight: 600;">
+                <ion-icon name="repeat-outline" slot="start"></ion-icon>
+                Quitar Repost
+              </ion-button>
             </div>
           </div>
+        </ion-content>
+      </ng-template>
+    </ion-modal>
+
+    <!-- Modal de Seguidores (Listado Flotante) -->
+    <ion-modal [isOpen]="isFollowersModalOpen" (didDismiss)="isFollowersModalOpen = false" [initialBreakpoint]="0.75" [breakpoints]="[0, 0.5, 0.75, 0.95]">
+      <ng-template>
+        <ion-header>
+          <ion-toolbar color="dark">
+            <ion-title>Seguidores</ion-title>
+            <ion-buttons slot="end">
+              <ion-button (click)="isFollowersModalOpen = false" color="light">Cerrar</ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        
+        <ion-content color="dark">
+          <ion-list lines="none" style="background: transparent; padding: 16px;">
+            <ion-item *ngFor="let user of followersList" style="--background: transparent; margin-bottom: 12px; --padding-start: 0; display: flex; align-items: center; width: 100%;">
+              <ion-avatar slot="start" style="width: 44px; height: 44px; border: 1px solid #5260ff; flex-shrink: 0; margin-right: 12px;">
+                <div style="width: 100%; height: 100%; background: #1e2235; display: flex; align-items: center; justify-content: center;">
+                  <ion-icon name="person-outline" style="color: #a4b0fc; font-size: 20px;"></ion-icon>
+                </div>
+              </ion-avatar>
+              
+              <ion-label style="flex-grow: 1;">
+                <h3 style="color: #fff; font-weight: bold; margin: 0;">@{{ user.username }}</h3>
+                <p style="color: #888; font-size: 12px; margin: 2px 0 0 0;" class="ion-text-wrap">{{ user.bio || 'Sin biografía' }}</p>
+              </ion-label>
+              
+              <!-- Botón seguir de vuelta / dejar de seguir -->
+              <ion-button slot="end" size="small" fill="solid"
+                          [color]="user.followedByMe ? 'medium' : 'primary'"
+                          (click)="toggleFollowUserInList(user)"
+                          style="text-transform: none; font-weight: bold; --border-radius: 8px; font-size: 12px; margin: 0; min-width: 110px;">
+                {{ user.followedByMe ? 'Dejar de seguir' : 'Seguir de vuelta' }}
+              </ion-button>
+            </ion-item>
+
+            <div *ngIf="followersList.length === 0" style="text-align: center; padding: 60px 20px; color: #666;">
+              <ion-icon name="people-outline" style="font-size: 48px; margin-bottom: 12px; color: #444;"></ion-icon>
+              <p style="margin: 0; font-size: 16px;">Nadie te sigue aún.</p>
+            </div>
+          </ion-list>
+        </ion-content>
+      </ng-template>
+    </ion-modal>
+
+    <!-- Modal de Seguidos (Listado Flotante) -->
+    <ion-modal [isOpen]="isFollowingModalOpen" (didDismiss)="isFollowingModalOpen = false" [initialBreakpoint]="0.75" [breakpoints]="[0, 0.5, 0.75, 0.95]">
+      <ng-template>
+        <ion-header>
+          <ion-toolbar color="dark">
+            <ion-title>Siguiendo</ion-title>
+            <ion-buttons slot="end">
+              <ion-button (click)="isFollowingModalOpen = false" color="light">Cerrar</ion-button>
+            </ion-buttons>
+          </ion-toolbar>
+        </ion-header>
+        
+        <ion-content color="dark">
+          <ion-list lines="none" style="background: transparent; padding: 16px;">
+            <ion-item *ngFor="let user of followingList" style="--background: transparent; margin-bottom: 12px; --padding-start: 0; display: flex; align-items: center; width: 100%;">
+              <ion-avatar slot="start" style="width: 44px; height: 44px; border: 1px solid #5260ff; flex-shrink: 0; margin-right: 12px;">
+                <div style="width: 100%; height: 100%; background: #1e2235; display: flex; align-items: center; justify-content: center;">
+                  <ion-icon name="person-outline" style="color: #a4b0fc; font-size: 20px;"></ion-icon>
+                </div>
+              </ion-avatar>
+              
+              <ion-label style="flex-grow: 1;">
+                <h3 style="color: #fff; font-weight: bold; margin: 0;">@{{ user.username }}</h3>
+                <p style="color: #888; font-size: 12px; margin: 2px 0 0 0;" class="ion-text-wrap">{{ user.bio || 'Sin biografía' }}</p>
+              </ion-label>
+              
+              <!-- Botón dejar de seguir / seguir -->
+              <ion-button slot="end" size="small" fill="solid"
+                          [color]="user.followedByMe ? 'medium' : 'primary'"
+                          (click)="toggleFollowUserInList(user)"
+                          style="text-transform: none; font-weight: bold; --border-radius: 8px; font-size: 12px; margin: 0; min-width: 110px;">
+                {{ user.followedByMe ? 'Dejar de seguir' : 'Seguir' }}
+              </ion-button>
+            </ion-item>
+
+            <div *ngIf="followingList.length === 0" style="text-align: center; padding: 60px 20px; color: #666;">
+              <ion-icon name="people-outline" style="font-size: 48px; margin-bottom: 12px; color: #444;"></ion-icon>
+              <p style="margin: 0; font-size: 16px;">No estás siguiendo a nadie aún.</p>
+            </div>
+          </ion-list>
         </ion-content>
       </ng-template>
     </ion-modal>

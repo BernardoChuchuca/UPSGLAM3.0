@@ -5,7 +5,7 @@ import {
   IonHeader, IonToolbar, IonTitle, IonButtons, IonButton,
   IonIcon, IonContent, IonSegment, IonSegmentButton, IonLabel,
   IonCard, IonCardHeader, IonChip, IonCardContent, AlertController,
-  IonModal
+  IonModal, IonList, IonItem, IonAvatar
 } from '@ionic/angular/standalone';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -14,7 +14,7 @@ import { addIcons } from 'ionicons';
 import { 
   logOutOutline, personOutline, imagesOutline, hardwareChipOutline,
   checkmarkCircleOutline, alertCircleOutline, timeOutline, gridOutline, cubeOutline,
-  trashOutline
+  trashOutline, repeatOutline, repeat, peopleOutline, people
 } from 'ionicons/icons';
 
 @Component({
@@ -27,15 +27,23 @@ import {
     FormsModule,
     IonHeader, IonToolbar, IonTitle, IonButtons, IonButton,
     IonIcon, IonContent, IonSegment, IonSegmentButton, IonLabel,
-    IonCard, IonCardHeader, IonChip, IonCardContent, IonModal
+    IonCard, IonCardHeader, IonChip, IonCardContent, IonModal,
+    IonList, IonItem, IonAvatar
   ]
 })
 export class Tab2Page implements OnInit {
   profile: any = null;
   posts: any[] = [];
+  reposts: any[] = [];
   history: any[] = [];
   activeTab: string = 'posts';
   selectedPost: any = null;
+
+  // Listas flotantes
+  isFollowersModalOpen: boolean = false;
+  isFollowingModalOpen: boolean = false;
+  followersList: any[] = [];
+  followingList: any[] = [];
 
   constructor(
     private authService: AuthService,
@@ -46,7 +54,7 @@ export class Tab2Page implements OnInit {
     addIcons({ 
       logOutOutline, personOutline, imagesOutline, hardwareChipOutline,
       checkmarkCircleOutline, alertCircleOutline, timeOutline, gridOutline, cubeOutline,
-      trashOutline
+      trashOutline, repeatOutline, repeat, peopleOutline, people
     });
   }
 
@@ -59,18 +67,37 @@ export class Tab2Page implements OnInit {
   }
 
   cargarDatosPerfil() {
-    this.profile = this.authService.getProfile();
-    if (this.profile && this.profile.id) {
-      this.postService.getUserPosts(this.profile.id).subscribe({
-        next: (data) => {
-          this.posts = data;
-        },
-        error: (err) => {
-          console.error('Error al cargar posts del usuario:', err);
+    this.postService.getMyProfile().subscribe({
+      next: (profileData) => {
+        this.profile = profileData;
+        if (this.profile && this.profile.id) {
+          // Cargar publicaciones propias
+          this.postService.getUserPosts(this.profile.id).subscribe({
+            next: (data) => {
+              this.posts = data;
+            },
+            error: (err) => {
+              console.error('Error al cargar posts del usuario:', err);
+            }
+          });
+          // Cargar publicaciones reposteadas
+          this.postService.getUserReposts(this.profile.id).subscribe({
+            next: (data) => {
+              this.reposts = data;
+            },
+            error: (err) => {
+              console.error('Error al cargar reposts del usuario:', err);
+            }
+          });
+          this.cargarHistorialProcesamiento();
         }
-      });
-      this.cargarHistorialProcesamiento();
-    }
+      },
+      error: (err) => {
+        console.error('Error al cargar perfil del backend:', err);
+        // Fallback al perfil local
+        this.profile = this.authService.getProfile();
+      }
+    });
   }
 
   cargarHistorialProcesamiento() {
@@ -81,6 +108,49 @@ export class Tab2Page implements OnInit {
       },
       error: (err) => {
         console.error('Error al cargar historial GPU:', err);
+      }
+    });
+  }
+
+  abrirSeguidores() {
+    if (!this.profile) return;
+    this.postService.getFollowers(this.profile.id).subscribe({
+      next: (data) => {
+        this.followersList = data;
+        this.isFollowersModalOpen = true;
+      },
+      error: (err) => {
+        console.error('Error al obtener seguidores:', err);
+      }
+    });
+  }
+
+  abrirSeguidos() {
+    if (!this.profile) return;
+    this.postService.getFollowing(this.profile.id).subscribe({
+      next: (data) => {
+        this.followingList = data;
+        this.isFollowingModalOpen = true;
+      },
+      error: (err) => {
+        console.error('Error al obtener seguidos:', err);
+      }
+    });
+  }
+
+  toggleFollowUserInList(user: any) {
+    const isFollowing = user.followedByMe;
+    const action = isFollowing
+      ? this.postService.unfollowUser(user.id)
+      : this.postService.followUser(user.id);
+
+    action.subscribe({
+      next: () => {
+        user.followedByMe = !isFollowing;
+        this.cargarDatosPerfil();
+      },
+      error: (err) => {
+        console.error('Error al alternar seguimiento en modal:', err);
       }
     });
   }
@@ -115,6 +185,40 @@ export class Tab2Page implements OnInit {
       },
       error: (err) => {
         console.error('Error al eliminar post:', err);
+      }
+    });
+  }
+
+  async confirmarQuitarRepost(postId: string) {
+    const alert = await this.alertController.create({
+      header: 'Quitar Repost',
+      message: '¿Quieres quitar esta publicación de tus reposteos?',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Quitar',
+          role: 'destructive',
+          handler: () => {
+            this.quitarRepost(postId);
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  quitarRepost(postId: string) {
+    this.postService.toggleRepost(postId).subscribe({
+      next: () => {
+        console.log('Repost quitado:', postId);
+        this.selectedPost = null;
+        this.cargarDatosPerfil();
+      },
+      error: (err) => {
+        console.error('Error al quitar repost:', err);
       }
     });
   }

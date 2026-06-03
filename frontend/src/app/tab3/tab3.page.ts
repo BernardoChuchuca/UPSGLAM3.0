@@ -5,12 +5,14 @@ import {
   IonHeader, IonToolbar, IonTitle, IonContent,
   IonItem, IonLabel, IonTextarea, IonSelect,
   IonSelectOption, IonButton, IonIcon, IonSpinner, IonToast,
-  IonSegment, IonSegmentButton
+  IonSegment, IonSegmentButton, IonCard, IonCardHeader, IonCardContent, IonChip
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
   sparklesOutline, imageOutline, cameraOutline,
-  cloudUploadOutline, hardwareChipOutline
+  cloudUploadOutline, hardwareChipOutline,
+  checkmarkCircleOutline, alertCircleOutline, timeOutline,
+  gridOutline, cubeOutline
 } from 'ionicons/icons';
 
 import { PostService, CreatePostRequest } from '../services/post';
@@ -26,7 +28,7 @@ import { PostService, CreatePostRequest } from '../services/post';
     IonHeader, IonToolbar, IonTitle, IonContent,
     IonItem, IonLabel, IonTextarea, IonSelect,
     IonSelectOption, IonButton, IonIcon, IonSpinner, IonToast,
-    IonSegment, IonSegmentButton
+    IonSegment, IonSegmentButton, IonCard, IonCardHeader, IonCardContent, IonChip
   ],
 })
 export class Tab3Page {
@@ -39,6 +41,9 @@ export class Tab3Page {
   selectedFilter: string = 'laplaciano';
   isPreviewLoading: boolean = false;
 
+  // Métricas de procesamiento GPU obtenidas de la previsualización
+  previewMetrics: any = null;
+
   isLoading: boolean = false;
   toastOpen: boolean = false;
   toastMessage: string = '';
@@ -47,7 +52,9 @@ export class Tab3Page {
   constructor(private postService: PostService) {
     addIcons({
       sparklesOutline, imageOutline, cameraOutline,
-      cloudUploadOutline, hardwareChipOutline
+      cloudUploadOutline, hardwareChipOutline,
+      checkmarkCircleOutline, alertCircleOutline, timeOutline,
+      gridOutline, cubeOutline
     });
   }
 
@@ -62,6 +69,7 @@ export class Tab3Page {
     reader.onload = () => {
       this.previewUrl = reader.result as string;
       this.filteredPreviewUrl = null;
+      this.previewMetrics = null;
       this.previewMode = 'original';
       this.cargarPrevisualizacion();
     };
@@ -81,6 +89,16 @@ export class Tab3Page {
     this.postService.obtenerPrevisualizacion(this.selectedFile, this.selectedFilter).subscribe({
       next: (res) => {
         this.filteredPreviewUrl = 'data:image/jpeg;base64,' + res.image_base64;
+        this.previewMetrics = {
+          width: res.width,
+          height: res.height,
+          blockDim: res.block_dim,
+          gridDim: res.grid_dim,
+          totalThreads: res.total_threads,
+          kernelTimeMs: res.kernel_time_ms,
+          status: res.status,
+          filterName: res.filter_name
+        };
         this.previewMode = 'preview';
         this.isPreviewLoading = false;
       },
@@ -88,6 +106,7 @@ export class Tab3Page {
         console.error('❌ Error al obtener previsualización:', err);
         this.mostrarToast('No se pudo cargar la previsualización del filtro.', 'danger');
         this.isPreviewLoading = false;
+        this.previewMetrics = null;
       }
     });
   }
@@ -125,6 +144,7 @@ export class Tab3Page {
     this.selectedFile = null;
     this.previewUrl = null;
     this.filteredPreviewUrl = null;
+    this.previewMetrics = null;
     this.previewMode = 'original';
     this.caption = '';
     this.selectedFilter = 'laplaciano';
